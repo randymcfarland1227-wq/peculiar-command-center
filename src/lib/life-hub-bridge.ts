@@ -90,9 +90,9 @@ export type CandleBridgeData = Pick<PeculiarData, "tasks" | "vessels" | "skus">;
 export function buildCandleSnapshot(data: CandleBridgeData): LifeHubSnapshot {
   const stars = readStars();
   const open = data.tasks.filter(isOpenTask);
-  const jarsAvailable = data.vessels.filter((v) => v.acceptance === "Accepted").length;
-  const jarsInUse = data.vessels.filter((v) => v.acceptance === "Needs Testing").length;
-  const totalPoured = data.skus.reduce((sum, sku) => sum + (Number(sku.poured) || 0), 0);
+  const openStudioTasks = open.length;
+  const acceptedVessels = data.vessels.filter((v) => v.acceptance === "Accepted").length;
+  const skusDefined = data.skus.length;
 
   const tasks: LifeHubTask[] = open.map((task) => ({
     id: task.id,
@@ -118,9 +118,9 @@ export function buildCandleSnapshot(data: CandleBridgeData): LifeHubSnapshot {
   return {
     source: CANDLE_SOURCE,
     metrics: {
-      jarsAvailable,
-      jarsInUse,
-      totalPoured,
+      openStudioTasks,
+      acceptedVessels,
+      skusDefined,
     },
     featured,
     tasks,
