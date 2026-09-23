@@ -1,0 +1,1 @@
+function e(e){return e.toLocaleString(`en-US`,{style:`currency`,currency:`USD`})}function t(e){if(!e)return`—`;let t=new Date(`${e}T12:00:00`);return Number.isNaN(t.getTime())?e:t.toLocaleDateString(`en-US`,{month:`short`,day:`numeric`})}export{t as n,e as t};
