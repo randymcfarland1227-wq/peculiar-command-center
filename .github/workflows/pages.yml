@@ -30,6 +30,8 @@ jobs:
           node-version: 22
       - name: Install and build the static site
         run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pil fonts-liberation
           npm install
           npm run build:pages
       - name: Commit the static site to the branch Pages already serves
