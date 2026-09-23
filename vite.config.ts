@@ -145,7 +145,12 @@ function authPopupPlugin(): Plugin {
 // `0.0.0.0:8080` is the live-preview contract — don't change host/port.
 // The dev server starts once `src/router.tsx` and `src/routes/` exist — see
 // AGENTS.md § "First scaffold".
-export default defineConfig(({ command, isPreview }) => ({
+export default defineConfig(({ command, isPreview }) => {
+  // GitHub Pages is a static host at /peculiar-command-center/. The preview
+  // and the Vercel deploy stay on "/" with the Nitro server build.
+  const forPages = process.env.GITHUB_PAGES === "1";
+  return {
+  base: forPages ? "/peculiar-command-center/" : "/",
   server: {
     host: "0.0.0.0",
     port: 8080,
@@ -166,18 +171,33 @@ export default defineConfig(({ command, isPreview }) => ({
     // PWA head + ?install=1 tutorial page; runs before Start/Nitro.
     grokPwaPlugin(),
     tailwindcss(),
-    tanstackStart(),
-    ...(command === "build" || isPreview
-      ? [
-          nitro({
-            preset: "vercel",
-            // Auto-registers server/middleware/* (the PWA install page +
-            // manifest + head-tag middleware). Nitro v3 defaults serverDir to
-            // false, so removing this silently unwires /?install=1 on deploys.
-            serverDir: "./server",
-          }),
-        ]
-      : []),
+    tanstackStart(
+      forPages
+        ? {
+            spa: {
+              enabled: true,
+              prerender: {
+                enabled: true,
+                crawlLinks: true,
+              },
+            },
+          }
+        : {},
+    ),
+    ...(forPages
+      ? []
+      : command === "build" || isPreview
+        ? [
+            nitro({
+              preset: "vercel",
+              // Auto-registers server/middleware/* (the PWA install page +
+              // manifest + head-tag middleware). Nitro v3 defaults serverDir to
+              // false, so removing this silently unwires /?install=1 on deploys.
+              serverDir: "./server",
+            }),
+          ]
+        : []),
     viteReact(),
   ],
-}));
+};
+});
