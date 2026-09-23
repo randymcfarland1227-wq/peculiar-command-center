@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { WORKSTREAM_LABEL, type Workstream } from "@/lib/peculiar/types";
 import { usePeculiar } from "@/lib/peculiar/store";
+import { LifeHubBridge } from "@/components/life-hub-bridge";
 import { TaskDrawer } from "@/components/task-drawer";
 
 const NAV: { href: string; label: string; group: string }[] = [
@@ -66,6 +67,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-paper text-ink">
+      <LifeHubBridge />
       <div className="flex min-h-screen">
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-forest text-paper md:flex">
           <Brand />
