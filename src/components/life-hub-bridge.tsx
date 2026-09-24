@@ -29,7 +29,10 @@ export function LifeHubBridge() {
   useEffect(() => {
     const detach = attachCandleLifeHubBridge({
       getData: () => sliceData(),
-      completeTask: (id) => {
+      completeTask: async (id) => {
+        // Pick up any edits made in the Candle tab since Life Hub loaded, so this save
+        // doesn't overwrite them with an older copy.
+        await usePeculiar.persist.rehydrate();
         usePeculiar.getState().updateTask(id, { status: "COMPLETE" });
       },
     });

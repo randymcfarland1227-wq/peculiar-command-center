@@ -158,7 +158,7 @@ export function postCandleSnapshot(
 
 type BridgeHandlers = {
   getData: () => CandleBridgeData | null;
-  completeTask: (id: string) => void;
+  completeTask: (id: string) => void | Promise<void>;
   onSnapshot?: () => void;
 };
 
@@ -187,11 +187,14 @@ export function attachCandleLifeHubBridge(handlers: BridgeHandlers) {
     }
 
     if (type === "randys-workroom:complete") {
-      handlers.completeTask(id);
-      setCandleStarred(id, false);
-      const data = handlers.getData();
-      if (data) postCandleSnapshot(data, event.source, event.origin);
-      handlers.onSnapshot?.();
+      const source = event.source;
+      const origin = event.origin;
+      void Promise.resolve(handlers.completeTask(id)).then(() => {
+        setCandleStarred(id, false);
+        const data = handlers.getData();
+        if (data) postCandleSnapshot(data, source, origin);
+        handlers.onSnapshot?.();
+      });
     }
   };
 

@@ -129,6 +129,9 @@ const dataKeys: (keyof PeculiarData)[] = [
   "acquisitions",
 ];
 
+/** localStorage key for the studio data (shared with Life Hub's embedded copy). */
+export const PECULIAR_STORAGE_KEY = "peculiar-command-center-v1";
+
 export const usePeculiar = create<Store>()(
   persist(
     (set) => ({
@@ -234,7 +237,7 @@ export const usePeculiar = create<Store>()(
       reset: () => set({ ...seedData(), openTaskId: null, draft: null }),
     }),
     {
-      name: "peculiar-command-center-v1",
+      name: PECULIAR_STORAGE_KEY,
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
       merge: (persisted, current) => {
