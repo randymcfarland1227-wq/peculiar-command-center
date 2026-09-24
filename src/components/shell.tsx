@@ -3,7 +3,7 @@ import { Menu, Plus, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { WORKSTREAM_LABEL, type Workstream } from "@/lib/peculiar/types";
-import { usePeculiar } from "@/lib/peculiar/store";
+import { usePeculiar, PECULIAR_STORAGE_KEY } from "@/lib/peculiar/store";
 import { LifeHubBridge } from "@/components/life-hub-bridge";
 import { TaskDrawer } from "@/components/task-drawer";
 
@@ -46,6 +46,13 @@ export function Shell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void usePeculiar.persist.rehydrate();
+    // Another tab (or Life Hub's embedded copy) saved changes — reload them before this tab can
+    // save its older copy over them.
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === PECULIAR_STORAGE_KEY) void usePeculiar.persist.rehydrate();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   useEffect(() => {
