@@ -246,6 +246,7 @@ export const usePeculiar = create<Store>()(
           ...current,
           ...saved,
           acquisitions: mergeAcquisitions(saved.acquisitions, current.acquisitions),
+          scents: mergeScents(saved.scents, current.scents),
         };
       },
       partialize: (state) => {
@@ -278,6 +279,27 @@ function mergeAcquisitions(saved: Acquisition[] | undefined, fresh: Acquisition[
     if (!seen.has(item.id)) merged.push(item);
   }
   return merged;
+}
+
+/** Roles from the original seed. A saved slot still carrying one (and no name) gets the current concept. */
+const ORIGINAL_SCENT_ROLES: Record<string, string> = {
+  "01": "Bright / Fresh",
+  "02": "Green / Botanical",
+  "03": "Woody / Dark",
+  "04": "Warm / Gourmand",
+  "05": "Clean / Atmospheric",
+  "06": "Experimental / Seasonal",
+};
+
+function mergeScents(saved: Scent[] | undefined, fresh: Scent[]): Scent[] {
+  if (!Array.isArray(saved)) return fresh;
+  const seedBySlot = new Map(fresh.map((item) => [item.slot, item]));
+  return saved.map((item) => {
+    const seed = seedBySlot.get(item.slot);
+    if (!seed || item.workingName || item.role !== ORIGINAL_SCENT_ROLES[item.slot]) return item;
+    const { workingName, role, mood, inspiration, notes } = seed;
+    return { ...item, workingName, role, mood, inspiration, notes };
+  });
 }
 
 export function variableCost(row: Store["economics"][number]) {

@@ -54,7 +54,7 @@ function ProductLabPage() {
 
       <section className="mb-12">
         <SectionTitle title="Scent lab" aside="Six slots" />
-        <Note>Names are not locked. Roles are. Do not fill these with vanilla, lavender, lemon, or sandalwood.</Note>
+        <Note>Nothing here is locked. Open a slot to rename it or change its direction.</Note>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {scents.map((scent) => {
             const open = openSlot === scent.slot;
@@ -75,11 +75,14 @@ function ProductLabPage() {
                     <Field label="Working name">
                       <TextInput value={scent.workingName} onChange={(event) => updateScent(scent.slot, { workingName: event.target.value })} />
                     </Field>
+                    <Field label="Role">
+                      <TextInput value={scent.role} onChange={(event) => updateScent(scent.slot, { role: event.target.value })} />
+                    </Field>
                     <Field label="Mood">
                       <TextInput value={scent.mood} onChange={(event) => updateScent(scent.slot, { mood: event.target.value })} />
                     </Field>
-                    <Field label="Inspiration">
-                      <TextInput value={scent.inspiration} onChange={(event) => updateScent(scent.slot, { inspiration: event.target.value })} />
+                    <Field label="Direction">
+                      <AreaInput value={scent.inspiration} onChange={(event) => updateScent(scent.slot, { inspiration: event.target.value })} />
                     </Field>
                     <Field label="Key notes">
                       <TextInput value={scent.keyNotes} onChange={(event) => updateScent(scent.slot, { keyNotes: event.target.value })} />

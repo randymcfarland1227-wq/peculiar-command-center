@@ -474,7 +474,6 @@ function experiments(): Experiment[] {
 
 function scents(): Scent[] {
   const base = {
-    workingName: "",
     keyNotes: "",
     supplier: "",
     materials: "",
@@ -486,12 +485,12 @@ function scents(): Scent[] {
     costPerCandle: "",
   };
   return [
-    { ...base, slot: "01", role: "Bright / Fresh", mood: "Sunlit, clean, slightly worn-in", inspiration: "Sun-warmed linen in an old apartment", notes: "Working role only. Name is not locked." },
-    { ...base, slot: "02", role: "Green / Botanical", mood: "Wet, green, quiet", inspiration: "A greenhouse after rain", notes: "Working role only. Name is not locked." },
-    { ...base, slot: "03", role: "Woody / Dark", mood: "Dry, dusky, dressed", inspiration: "Dusty books and an expensive cologne", notes: "Working role only. Name is not locked." },
-    { ...base, slot: "04", role: "Warm / Gourmand", mood: "Low, sweet, not bakery-basic", inspiration: "Dark fruit on a wooden table", notes: "Do not name this vanilla." },
-    { ...base, slot: "05", role: "Clean / Atmospheric", mood: "Mineral, airy, a little strange", inspiration: "A strange little hotel lobby", notes: "Working role only. Name is not locked." },
-    { ...base, slot: "06", role: "Experimental / Seasonal", mood: "Unassigned", inspiration: "Museum storage, or wet pavement outside a jazz bar", notes: "May wait. Do not force this into the first launch." },
+    { ...base, slot: "01", workingName: "Cashmere Woods", role: "Cozy / warm / elevated", mood: "", inspiration: "Inspired by Glade Cashmere Woods, but more expensive-feeling: soft woods, amber, musk, cashmere-type warmth.", notes: "" },
+    { ...base, slot: "02", workingName: "Rainy Clean / Art-Class Soap", role: "Fresh / aquatic / nostalgic", mood: "", inspiration: "Rain, clean air, watery freshness — with that distinctive clear aquarium/sea-creature hand soap from childhood art class as a possible inspiration.", notes: "" },
+    { ...base, slot: "03", workingName: "Woodsy Earth", role: "Grounded / outdoorsy", mood: "", inspiration: "Piney, earthy, forest-like, possibly cedar/resin/moss/soil notes. Less “Christmas tree,” more grounded nature.", notes: "" },
+    { ...base, slot: "04", workingName: "Bespoke Vanilla", role: "Familiar but peculiar", mood: "", inspiration: "Vanilla as the approachable scent, but paired with something unexpected so it doesn't feel like a basic vanilla candle.", notes: "" },
+    { ...base, slot: "05", workingName: "Childhood Memory", role: "Nostalgic / abstract / emotional", mood: "", inspiration: "A scent that makes someone go “I don't know what this is, but I remember this.” Built around shared Gen Z/millennial childhood sensory memories rather than an obvious fragrance category.", notes: "" },
+    { ...base, slot: "06", workingName: "???", role: "Open slot", mood: "", inspiration: "Not decided yet — this is the one we still need to discover.", notes: "" },
   ];
 }
 
