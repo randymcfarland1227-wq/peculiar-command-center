@@ -15,6 +15,7 @@ import type {
   SizeModel,
   Supplier,
   Task,
+  TaskStep,
   Vessel,
   Workstream,
   Acquisition,
@@ -44,6 +45,93 @@ function t(
   extra: Partial<Task> = {},
 ): Task {
   return { id, title, workstream, status, priority, section, ...emptyTask, ...extra };
+}
+
+const step = (id: string, label: string, hint: string): TaskStep => ({ id, label, hint, value: "" });
+
+/**
+ * The five Product Lab components, each one task whose fields are worked left to right.
+ * Step ids are the ids of the separate tasks they replaced, so saved progress carries over.
+ * Order here is the build order: vessels and wax first, wicks once the others are known.
+ */
+export function productLabTracks(): Task[] {
+  return [
+    t("pl-vessels", "Vessels", "product-lab", "IN PROGRESS", "NOW", "Vessels", {
+      due: "2026-10-06",
+      relatedExperiment: "exp-vessel",
+      relatedSupplier: "sup-glass",
+      notes: "Example rows in Inventory are placeholders until measured.",
+      launchArea: "Inventory",
+      steps: [
+        step("p23", "Inventory", "Measured and classified by fill range, diameter, and profile"),
+        step("p24", "Acceptance criteria", "What a vessel needs to pass"),
+        step("p25", "Rejection criteria", "What rules a vessel out"),
+        step("p26", "Old branding", "Which marks stay, which come off"),
+        step("p27", "Wholesale supplier", "Recycled-glass supplier"),
+        step("p29", "Glass samples", "Ordered from, and when"),
+        step("p28", "Backup supplier", "Second recycled-glass source"),
+      ],
+    }),
+    t("pl-wax", "Wax", "product-lab", "PLANNING", "NOW", "Wax", {
+      due: "2026-10-03",
+      relatedExperiment: "exp-wax",
+      relatedSupplier: "sup-wax",
+      launchArea: "Product",
+      steps: [
+        step("p1", "Wax candidates", "Soy-coconut blends ordered"),
+        step("p2", "Finish", "How each candidate sets up"),
+        step("p3", "Scent performance", "Which carries fragrance best"),
+        step("p4", "Cure behavior", "How each changes while curing"),
+        step("p5", "Wax", "The launch wax"),
+        step("p6", "Cure standard", "Peculiar's minimum cure"),
+      ],
+    }),
+    t("pl-fragrance", "Fragrance", "product-lab", "NOT STARTED", "NOW", "Fragrance", {
+      due: "2026-10-10",
+      relatedExperiment: "exp-scent",
+      relatedSupplier: "sup-frag",
+      notes: "Design each scent in the Scent lab below. This track holds the decisions around them.",
+      launchArea: "Product",
+      steps: [
+        step("p7", "Scent concepts", "Places, memories, objects, atmospheres. Not vanilla, lavender, lemon, or sandalwood"),
+        step("p8", "Scent 06", "Launches now or waits"),
+        step("p9", "Scent briefs", "One brief per scent"),
+        step("p10", "Fragrance suppliers", "Sourced from each concept"),
+        step("p11", "Samples", "Ordered from, and when"),
+        step("p12", "Formulas", "Blended and tested"),
+        step("p13", "Cold throw", "Results"),
+        step("p14", "Hot throw", "Results"),
+        step("p15", "Formula records", "Where each formula is written down"),
+        step("p16", "Fragrance load", "By scent. 6% by wax weight is only the starting point"),
+        step("p17", "Cost per ounce", "Each final fragrance"),
+      ],
+    }),
+    t("pl-wicks", "Wicks", "product-lab", "NOT STARTED", "NEXT", "Wicks", {
+      relatedSupplier: "sup-wick",
+      dependencies: "pl-vessels, pl-wax, pl-fragrance",
+      launchArea: "Product",
+      steps: [
+        step("p18", "Wick families", "Which families to test"),
+        step("p19", "Wick sampler", "Ordered from, and when"),
+        step("p20", "By vessel", "Results by diameter and profile"),
+        step("p21", "By fragrance", "Results by scent"),
+        step("p22", "Wick combinations", "The combinations that pass"),
+      ],
+    }),
+    t("pl-closures", "Closures", "product-lab", "NOT STARTED", "NEXT", "Closures", {
+      relatedExperiment: "exp-cork",
+      dependencies: "pl-vessels",
+      launchArea: "Packaging",
+      steps: [
+        step("p30", "Closure", "Lid or cork"),
+        step("p31", "Cork prototype", "How it fits and seals"),
+        step("p32", "Beeswax detail", "How the seal looks and holds"),
+        step("p33", "Heat and shipping", "Stability results"),
+        step("p34", "Every line?", "Which lines get a closure"),
+        step("p35", "Closure cost", "Per candle"),
+      ],
+    }),
+  ];
 }
 
 const est = (amount: number): MoneyCell => ({ amount, source: "ESTIMATE" });
@@ -151,61 +239,7 @@ function tasks(): Task[] {
     t("c15", "Create business expense categories", "company", "NOT STARTED", "LATER", "Finance"),
     t("c16", "Create tax reserve process", "company", "NOT STARTED", "LATER", "Finance"),
 
-    t("p1", "Choose and order soy-coconut wax candidates", "product-lab", "PLANNING", "NOW", "Wax", {
-      due: "2026-10-03",
-      relatedExperiment: "exp-wax",
-      relatedSupplier: "sup-wax",
-      launchArea: "Product",
-    }),
-    t("p2", "Compare wax finish", "product-lab", "NOT STARTED", "NEXT", "Wax", { relatedExperiment: "exp-wax" }),
-    t("p3", "Compare wax scent performance", "product-lab", "NOT STARTED", "NEXT", "Wax", { relatedExperiment: "exp-wax" }),
-    t("p4", "Compare cure behavior", "product-lab", "NOT STARTED", "NEXT", "Wax", { relatedExperiment: "exp-wax" }),
-    t("p5", "Choose final launch wax", "product-lab", "NOT STARTED", "LATER", "Wax", { launchArea: "Product" }),
-    t("p6", "Establish Peculiar cure standard", "product-lab", "NOT STARTED", "LATER", "Wax", { launchArea: "Safety" }),
-    t("p7", "Define the five signature scent concepts", "product-lab", "NOT STARTED", "NOW", "Fragrance", {
-      due: "2026-10-10",
-      notes: "Places, memories, objects, atmospheres. Not vanilla, lavender, lemon, or sandalwood.",
-      launchArea: "Product",
-    }),
-    t("p8", "Decide whether scent 06 launches immediately", "product-lab", "NOT STARTED", "NEXT", "Fragrance"),
-    t("p9", "Build scent briefs", "product-lab", "NOT STARTED", "NEXT", "Fragrance"),
-    t("p10", "Identify fragrance suppliers from each concept", "product-lab", "NOT STARTED", "NEXT", "Fragrance", {
-      relatedSupplier: "sup-frag",
-    }),
-    t("p11", "Order fragrance samples", "product-lab", "NOT STARTED", "LATER", "Fragrance"),
-    t("p12", "Blend and test scent formulas", "product-lab", "NOT STARTED", "LATER", "Fragrance", { relatedExperiment: "exp-scent" }),
-    t("p13", "Test cold throw", "product-lab", "NOT STARTED", "LATER", "Fragrance"),
-    t("p14", "Test hot throw", "product-lab", "NOT STARTED", "LATER", "Fragrance"),
-    t("p15", "Document each formula", "product-lab", "NOT STARTED", "LATER", "Fragrance"),
-    t("p16", "Determine final fragrance load by scent", "product-lab", "NOT STARTED", "LATER", "Fragrance", {
-      notes: "6% by wax weight is only the starting test point.",
-    }),
-    t("p17", "Determine cost per ounce of each final fragrance", "product-lab", "NOT STARTED", "LATER", "Fragrance"),
-    t("p18", "Choose wick families to test", "product-lab", "NOT STARTED", "NEXT", "Wicks"),
-    t("p19", "Order wick sampler", "product-lab", "NOT STARTED", "NEXT", "Wicks", { relatedSupplier: "sup-wick" }),
-    t("p20", "Test wicks by vessel diameter and profile", "product-lab", "NOT STARTED", "LATER", "Wicks", { launchArea: "Product" }),
-    t("p21", "Test wicks by fragrance", "product-lab", "NOT STARTED", "LATER", "Wicks"),
-    t("p22", "Record successful wick combinations", "product-lab", "NOT STARTED", "LATER", "Wicks"),
-    t("p23", "Measure and classify current reclaimed vessel inventory", "product-lab", "IN PROGRESS", "NOW", "Vessels", {
-      due: "2026-10-06",
-      relatedExperiment: "exp-vessel",
-      notes: "Classify by fill range, diameter, and profile. Example rows in Inventory are placeholders until measured.",
-      launchArea: "Inventory",
-    }),
-    t("p24", "Formalize vessel acceptance criteria", "product-lab", "NOT STARTED", "NEXT", "Vessels"),
-    t("p25", "Formalize vessel rejection criteria", "product-lab", "NOT STARTED", "NEXT", "Vessels"),
-    t("p26", "Determine which old branding is acceptable or removable", "product-lab", "NOT STARTED", "NEXT", "Vessels"),
-    t("p27", "Identify wholesale recycled-glass vessel supplier", "product-lab", "NOT STARTED", "NEXT", "Vessels", {
-      relatedSupplier: "sup-glass",
-    }),
-    t("p28", "Identify backup recycled-glass supplier", "product-lab", "NOT STARTED", "LATER", "Vessels"),
-    t("p29", "Order recycled-glass samples", "product-lab", "NOT STARTED", "NEXT", "Vessels"),
-    t("p30", "Compare lids and cork options", "product-lab", "NOT STARTED", "NEXT", "Closures", { relatedExperiment: "exp-cork" }),
-    t("p31", "Prototype cork closure", "product-lab", "NOT STARTED", "NEXT", "Closures", { relatedExperiment: "exp-cork" }),
-    t("p32", "Prototype beeswax detail", "product-lab", "NOT STARTED", "NEXT", "Closures", { relatedExperiment: "exp-cork" }),
-    t("p33", "Test closure heat and shipping stability", "product-lab", "NOT STARTED", "LATER", "Closures", { launchArea: "Packaging" }),
-    t("p34", "Decide whether every line uses a closure", "product-lab", "NOT STARTED", "LATER", "Closures"),
-    t("p35", "Determine closure cost", "product-lab", "NOT STARTED", "LATER", "Closures"),
+    ...productLabTracks(),
 
     t("s1", "Gather applicable candle safety standards", "product-lab", "NOT STARTED", "NEXT", "Safety", { launchArea: "Safety" }),
     t("s2", "Gather supplier SDS, IFRA, and usage documents", "product-lab", "NOT STARTED", "NEXT", "Safety", { launchArea: "Safety" }),

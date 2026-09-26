@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import { countComplete, usePeculiar } from "@/lib/peculiar/store";
+import { countComplete, stepProgress, usePeculiar } from "@/lib/peculiar/store";
 import type { Decision, Experiment, Task } from "@/lib/peculiar/types";
 import { DecisionChip, StatusChip } from "@/components/status-chip";
 
@@ -176,7 +176,7 @@ function Column({
           <div className="h-1 bg-forest" style={{ width: `${count.percent}%` }} />
         </div>
         <p className="mt-2 text-xs tracking-widest text-muted">
-          {count.done} of {count.total} tasks complete
+          {count.done} of {count.total} complete
         </p>
       </div>
       <div className="flex flex-col gap-3">{children}</div>
@@ -192,13 +192,13 @@ function TaskBlock({ title, href, tasks }: { title: string; href: string; tasks:
       <BlockHead title={title} href={href} aside={`${count.percent}% · ${count.done}/${count.total}`} />
       {sections.map((section) => (
         <div key={section} className="mt-3">
-          <h3 className="text-xs tracking-widest text-olive">{section}</h3>
+          {tasks.some((task) => task.section === section && task.title !== section) ? (
+            <h3 className="text-xs tracking-widest text-olive">{section}</h3>
+          ) : null}
           <ul>
             {tasks
               .filter((task) => task.section === section)
-              .map((task) => (
-                <TaskLine key={task.id} task={task} />
-              ))}
+              .map((task) => (task.steps?.length ? <StepLine key={task.id} task={task} /> : <TaskLine key={task.id} task={task} />))}
           </ul>
         </div>
       ))}
@@ -237,6 +237,33 @@ function TaskLine({ task }: { task: Task }) {
       <button type="button" onClick={() => setOpenTask(task.id)} className={cn("py-2 text-left text-sm", done && "text-muted line-through")}>
         {task.title}
       </button>
+    </li>
+  );
+}
+
+/** A stepped task on the overview: one row of segments, filled left to right. */
+function StepLine({ task }: { task: Task }) {
+  const setOpenTask = usePeculiar((s) => s.setOpenTask);
+  const progress = stepProgress(task);
+  const done = task.status === "COMPLETE";
+  return (
+    <li className="border-t border-line py-2">
+      <button type="button" onClick={() => setOpenTask(task.id)} className="flex w-full items-baseline justify-between gap-3 text-left">
+        <span className={cn("text-sm", done && "text-muted line-through")}>{task.title}</span>
+        <span className="text-xs tabular-nums tracking-widest text-muted">
+          {progress.done}/{progress.total}
+        </span>
+      </button>
+      <div className="mt-2 flex gap-1" aria-hidden="true">
+        {(task.steps ?? []).map((item) => (
+          <span
+            key={item.id}
+            title={item.label}
+            className={cn("h-2 flex-1", item.value.trim() ? "bg-forest" : item === progress.next ? "bg-sage" : "bg-cream")}
+          />
+        ))}
+      </div>
+      {progress.next && !done ? <p className="mt-1 text-xs text-muted">Next: {progress.next.label}</p> : null}
     </li>
   );
 }

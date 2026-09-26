@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { seedData } from "./seed";
+import { productLabTracks, seedData } from "./seed";
 import type {
   Blocker,
   BudgetLine,
@@ -18,6 +18,8 @@ import type {
   Size,
   Supplier,
   Task,
+  TaskStatus,
+  TaskStep,
   Vessel,
   Acquisition,
 } from "./types";
@@ -29,6 +31,7 @@ interface UiState {
 
 interface Actions {
   updateTask: (id: string, patch: Partial<Task>) => void;
+  updateStep: (taskId: string, stepId: string, value: string) => void;
   addTask: (task: Task) => void;
   removeTask: (id: string) => void;
   startDraft: (partial?: Partial<Task>) => void;
@@ -142,6 +145,14 @@ export const usePeculiar = create<Store>()(
         set((s) => ({
           tasks: s.tasks.map((task) => (task.id === id ? withComplete(task, patch) : task)),
         })),
+      updateStep: (taskId, stepId, value) =>
+        set((s) => ({
+          tasks: s.tasks.map((task) => {
+            if (task.id !== taskId || !task.steps) return task;
+            const steps = task.steps.map((item) => (item.id === stepId ? { ...item, value } : item));
+            return withComplete({ ...task, steps }, { status: statusFromSteps(task.status, steps) });
+          }),
+        })),
       addTask: (task) => set((s) => ({ tasks: [task, ...s.tasks], draft: null, openTaskId: task.id })),
       removeTask: (id) =>
         set((s) => ({
@@ -246,6 +257,7 @@ export const usePeculiar = create<Store>()(
           ...current,
           ...saved,
           acquisitions: mergeAcquisitions(saved.acquisitions, current.acquisitions),
+          tasks: mergeProductLabTracks(saved.tasks, current.tasks),
           scents: mergeScents(saved.scents, current.scents),
         };
       },
@@ -257,6 +269,51 @@ export const usePeculiar = create<Store>()(
     },
   ),
 );
+
+/** A stepped task is complete once every field is filled, and in progress once any is. */
+function statusFromSteps(current: TaskStatus, steps: TaskStep[]): TaskStatus {
+  const filled = steps.filter((item) => item.value.trim()).length;
+  if (filled === steps.length) return "COMPLETE";
+  if (current === "COMPLETE") return "IN PROGRESS";
+  if (filled > 0 && (current === "NOT STARTED" || current === "PLANNING")) return "IN PROGRESS";
+  return current;
+}
+
+/** Notes the old seed shipped with. Their content now lives in the step hints. */
+const ORIGINAL_STEP_NOTES = new Set([
+  "Places, memories, objects, atmospheres. Not vanilla, lavender, lemon, or sandalwood.",
+  "6% by wax weight is only the starting test point.",
+  "Classify by fill range, diameter, and profile. Example rows in Inventory are placeholders until measured.",
+]);
+
+/**
+ * Folds the old one-task-per-step Product Lab lists (p1–p35) into the five stepped tasks.
+ * A step the old list had checked off keeps its notes as the entry, or "Done".
+ * Notes on steps still open move into the new task's notes so nothing is lost.
+ */
+function mergeProductLabTracks(saved: Task[] | undefined, fresh: Task[]): Task[] {
+  if (!Array.isArray(saved)) return fresh;
+  const tracks = productLabTracks();
+  if (saved.some((task) => task.id === tracks[0].id)) return saved;
+  const old = new Map(saved.map((task) => [task.id, task]));
+  const oldIds = new Set(tracks.flatMap((track) => track.steps?.map((item) => item.id) ?? []));
+  const migrated = tracks.map((track) => {
+    const carried: string[] = [];
+    const steps = (track.steps ?? []).map((item) => {
+      const was = old.get(item.id);
+      if (!was) return item;
+      if (was.status === "COMPLETE") return { ...item, value: was.notes.trim() || "Done" };
+      if (was.notes.trim() && !ORIGINAL_STEP_NOTES.has(was.notes.trim())) carried.push(`${item.label}: ${was.notes.trim()}`);
+      return item;
+    });
+    const notes = [track.notes, ...carried].filter(Boolean).join("\n");
+    return withComplete({ ...track, steps, notes }, { status: statusFromSteps(track.status, steps) });
+  });
+  const firstAt = saved.findIndex((task) => oldIds.has(task.id));
+  const kept = saved.filter((task) => !oldIds.has(task.id));
+  const at = firstAt < 0 ? kept.length : saved.slice(0, firstAt).filter((task) => !oldIds.has(task.id)).length;
+  return [...kept.slice(0, at), ...migrated, ...kept.slice(at)];
+}
 
 function mergeAcquisitions(saved: Acquisition[] | undefined, fresh: Acquisition[]): Acquisition[] {
   if (!Array.isArray(saved)) return fresh;
@@ -306,9 +363,28 @@ export function variableCost(row: Store["economics"][number]) {
   return Object.values(row.lines).reduce((sum, cell) => sum + (Number(cell.amount) || 0), 0);
 }
 
+/** Filled fields out of all fields on a stepped task, and the first one still open. */
+export function stepProgress(task: Task) {
+  const steps = task.steps ?? [];
+  const done = steps.filter((item) => item.value.trim()).length;
+  const next = steps.find((item) => !item.value.trim()) ?? null;
+  return { done, total: steps.length, next };
+}
+
+/** Each field of a stepped task counts as one unit, so a half-filled component shows as half done. */
 export function countComplete(tasks: Task[]) {
-  const total = tasks.length;
-  const done = tasks.filter((task) => task.status === "COMPLETE").length;
+  let total = 0;
+  let done = 0;
+  for (const task of tasks) {
+    if (task.steps?.length) {
+      const progress = stepProgress(task);
+      total += progress.total;
+      done += task.status === "COMPLETE" ? progress.total : progress.done;
+    } else {
+      total += 1;
+      if (task.status === "COMPLETE") done += 1;
+    }
+  }
   return { done, total, percent: total ? Math.round((done / total) * 100) : 0 };
 }
 

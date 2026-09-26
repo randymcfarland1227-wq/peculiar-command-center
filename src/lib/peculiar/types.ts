@@ -95,6 +95,14 @@ export const PILLARS = [
   "Customer Unboxings",
 ] as const;
 
+/** One field inside a stepped task. Filling it in completes that step. */
+export interface TaskStep {
+  id: string;
+  label: string;
+  hint: string;
+  value: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -113,6 +121,8 @@ export interface Task {
   relatedSupplier: string;
   relatedDocument: string;
   launchArea: LaunchArea | "";
+  /** Ordered fields worked left to right. Present on the Product Lab component tasks. */
+  steps?: TaskStep[];
 }
 
 export interface Decision {

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { AreaInput, Field, Note, PageIntro, SectionTitle, TextInput } from "@/components/fields";
 import { StatusChip } from "@/components/status-chip";
+import { StepTrack } from "@/components/step-track";
 import { TaskList } from "@/components/task-list";
 import { usePeculiar } from "@/lib/peculiar/store";
 import { STATUSES } from "@/lib/peculiar/types";
@@ -10,7 +11,6 @@ export const Route = createFileRoute("/product-lab")({
   component: ProductLabPage,
 });
 
-const LANES = ["Wax", "Fragrance", "Wicks", "Vessels", "Closures", "Safety"];
 
 function ProductLabPage() {
   const allTasks = usePeculiar((s) => s.tasks);
@@ -22,7 +22,7 @@ function ProductLabPage() {
   const tasks = allTasks.filter((task) => task.workstream === "product-lab");
   const experiments = allExperiments.filter((item) => item.workstream === "product-lab");
   const decisions = allDecisions.filter((item) => item.workstreams.includes("product-lab"));
-  const [lane, setLane] = useState("Wax");
+  const tracks = tasks.filter((task) => task.steps?.length);
   const [openSlot, setOpenSlot] = useState("01");
 
   return (
@@ -34,22 +34,19 @@ function ProductLabPage() {
         lede="Launch depends on a tested soy-coconut wax, five signature scents, a diameter-based wick system, and a closure that survives shipping. Reclaimed glass has been sourced for about three months. It still needs to be measured."
       />
 
-      <div className="mb-8 flex flex-wrap gap-2">
-        {LANES.map((item) => (
-          <button
-            key={item}
-            type="button"
-            onClick={() => setLane(item)}
-            className={item === lane ? "h-11 bg-forest px-3 text-sm text-paper" : "h-11 border border-line bg-sheet px-3 text-sm"}
-          >
-            {item}
-          </button>
-        ))}
-      </div>
+      <section className="mb-10">
+        <SectionTitle title="Build sequence" aside={`${tracks.filter((task) => task.status === "COMPLETE").length} of ${tracks.length} complete`} />
+        <Note>Work each row left to right. A field counts as done once it has an answer, and the row completes when every field is filled.</Note>
+        <div className="mt-4 grid gap-3">
+          {tracks.map((task, at) => (
+            <StepTrack key={task.id} task={task} index={at + 1} />
+          ))}
+        </div>
+      </section>
 
       <section className="mb-10">
-        <SectionTitle title={lane} />
-        <TaskList tasks={tasks.filter((task) => task.section === lane)} />
+        <SectionTitle title="Safety" />
+        <TaskList tasks={tasks.filter((task) => !task.steps?.length)} />
       </section>
 
       <section className="mb-12">

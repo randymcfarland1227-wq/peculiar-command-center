@@ -10,6 +10,7 @@ export function TaskDrawer() {
   const tasks = usePeculiar((s) => s.tasks);
   const task = tasks.find((item) => item.id === openTaskId) ?? null;
   const updateTask = usePeculiar((s) => s.updateTask);
+  const updateStep = usePeculiar((s) => s.updateStep);
   const updateDraft = usePeculiar((s) => s.updateDraft);
   const commitDraft = usePeculiar((s) => s.commitDraft);
   const cancelDraft = usePeculiar((s) => s.cancelDraft);
@@ -98,6 +99,16 @@ export function TaskDrawer() {
               <TextInput value={record.owner} onChange={(event) => patch({ owner: event.target.value })} />
             </Field>
           </div>
+          {!draft && task?.steps?.length ? (
+            <div className="grid gap-3 border border-line bg-sheet p-3">
+              <p className="text-xs tracking-widest text-olive">Fields, in order</p>
+              {task.steps.map((item, at) => (
+                <Field key={item.id} label={`${at + 1}. ${item.label}`}>
+                  <TextInput value={item.value} placeholder={item.hint} onChange={(event) => updateStep(task.id, item.id, event.target.value)} />
+                </Field>
+              ))}
+            </div>
+          ) : null}
           <Field label="Notes">
             <AreaInput value={record.notes} onChange={(event) => patch({ notes: event.target.value })} />
           </Field>
