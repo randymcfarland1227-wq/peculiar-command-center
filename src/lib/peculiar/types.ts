@@ -336,4 +336,6 @@ export interface PeculiarData {
   documents: DocLink[];
   blockers: Blocker[];
   acquisitions: Acquisition[];
+  /** Ids of built-in acquisitions the user deleted, so a reload doesn't restore them. */
+  removedAcquisitions: string[];
 }

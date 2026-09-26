@@ -180,6 +180,7 @@ export function seedData(): PeculiarData {
     documents: documents(),
     blockers: blockers(),
     acquisitions: acquisitions(),
+    removedAcquisitions: [],
   };
 }
 

@@ -135,6 +135,7 @@ const dataKeys: (keyof PeculiarData)[] = [
   "documents",
   "blockers",
   "acquisitions",
+  "removedAcquisitions",
 ];
 
 /** localStorage key for the studio data (shared with Life Hub's embedded copy). */
@@ -270,7 +271,11 @@ export const usePeculiar = create<Store>()(
           acquisitions: s.acquisitions.map((item) => (item.id === id ? { ...item, ...patch } : item)),
         })),
       addAcquisition: (item) => set((s) => ({ acquisitions: [item, ...s.acquisitions] })),
-      removeAcquisition: (id) => set((s) => ({ acquisitions: s.acquisitions.filter((item) => item.id !== id) })),
+      removeAcquisition: (id) =>
+        set((s) => ({
+          acquisitions: s.acquisitions.filter((item) => item.id !== id),
+          removedAcquisitions: s.removedAcquisitions.includes(id) ? s.removedAcquisitions : [...s.removedAcquisitions, id],
+        })),
       reset: () => set({ ...seedData(), openTaskId: null, draft: null }),
     }),
     {
@@ -282,7 +287,8 @@ export const usePeculiar = create<Store>()(
         return {
           ...current,
           ...saved,
-          acquisitions: mergeAcquisitions(saved.acquisitions, current.acquisitions),
+          acquisitions: mergeAcquisitions(saved.acquisitions, current.acquisitions, saved.removedAcquisitions ?? []),
+          removedAcquisitions: saved.removedAcquisitions ?? [],
           tasks: mergeProductLabTracks(saved.tasks, current.tasks),
           scents: mergeScents(saved.scents, current.scents),
         };
@@ -342,7 +348,7 @@ function mergeProductLabTracks(saved: Task[] | undefined, fresh: Task[]): Task[]
   return [...kept.slice(0, at), ...migrated, ...kept.slice(at)];
 }
 
-function mergeAcquisitions(saved: Acquisition[] | undefined, fresh: Acquisition[]): Acquisition[] {
+function mergeAcquisitions(saved: Acquisition[] | undefined, fresh: Acquisition[], removed: string[]): Acquisition[] {
   if (!Array.isArray(saved)) return fresh;
   const seedById = new Map(fresh.map((item) => [item.id, item]));
   const seen = new Set<string>();
@@ -360,7 +366,7 @@ function mergeAcquisitions(saved: Acquisition[] | undefined, fresh: Acquisition[
     return { ...filled, name: seed.name, category: seed.category, purpose: seed.purpose, details: filled.details || seed.details };
   });
   for (const item of fresh) {
-    if (!seen.has(item.id)) merged.push(item);
+    if (!seen.has(item.id) && !removed.includes(item.id)) merged.push(item);
   }
   return merged;
 }
