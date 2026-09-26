@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { AreaInput, Field, Note, PageIntro, SectionTitle, TextInput } from "@/components/fields";
+import { AreaInput, DeleteButton, Field, Note, PageIntro, SectionTitle, TextInput } from "@/components/fields";
 import { StatusChip } from "@/components/status-chip";
 import { StepTrackRow } from "@/components/step-track";
 import { TaskList } from "@/components/task-list";
@@ -18,6 +18,8 @@ function ProductLabPage() {
   const updateExperiment = usePeculiar((s) => s.updateExperiment);
   const scents = usePeculiar((s) => s.scents);
   const updateScent = usePeculiar((s) => s.updateScent);
+  const removeScent = usePeculiar((s) => s.removeScent);
+  const removeExperiment = usePeculiar((s) => s.removeExperiment);
   const allDecisions = usePeculiar((s) => s.decisions);
   const tasks = allTasks.filter((task) => task.workstream === "product-lab");
   const experiments = allExperiments.filter((item) => item.workstream === "product-lab");
@@ -48,7 +50,7 @@ function ProductLabPage() {
       </section>
 
       <section className="mb-12">
-        <SectionTitle title="Scent lab" aside="Six slots" />
+        <SectionTitle title="Scent lab" aside={`${scents.length} slots`} />
         <Note>Nothing here is locked. Open a slot to rename it or change its direction.</Note>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {scents.map((scent) => {
@@ -119,6 +121,7 @@ function ProductLabPage() {
                       />
                       Approved for launch
                     </label>
+                    <DeleteButton label="Delete scent" className="self-start" onConfirm={() => removeScent(scent.slot)} />
                   </div>
                 ) : (
                   <p className="mt-3 text-sm text-muted">{scent.inspiration}</p>
@@ -161,6 +164,7 @@ function ProductLabPage() {
                   <TextInput value={item.nextAction} onChange={(event) => updateExperiment(item.id, { nextAction: event.target.value })} />
                 </Field>
               </div>
+              <DeleteButton label="Delete experiment" className="mt-3" onConfirm={() => removeExperiment(item.id)} />
             </article>
           ))}
         </div>

@@ -5,6 +5,7 @@ import { cn } from "@/lib/cn";
 import { countComplete, stepProgress, usePeculiar } from "@/lib/peculiar/store";
 import type { Decision, Experiment, Task } from "@/lib/peculiar/types";
 import { DecisionChip, StatusChip } from "@/components/status-chip";
+import { DeleteButton } from "@/components/fields";
 
 export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
@@ -21,6 +22,9 @@ function Dashboard() {
   const content = usePeculiar((s) => s.content);
   const questions = usePeculiar((s) => s.questions);
   const economics = usePeculiar((s) => s.economics);
+  const removeQuestion = usePeculiar((s) => s.removeQuestion);
+  const removeScent = usePeculiar((s) => s.removeScent);
+  const removeSupplier = usePeculiar((s) => s.removeSupplier);
 
   const company = tasks.filter((task) => task.workstream === "company");
   const research = tasks.filter((task) => task.workstream === "research");
@@ -122,8 +126,9 @@ function Dashboard() {
               <BlockHead title="Open questions" href="/research" aside={`${questions.length}`} />
               <ul>
                 {questions.map((item) => (
-                  <li key={item.id} className="border-t border-line py-2 text-sm">
-                    {item.question}
+                  <li key={item.id} className="flex items-center justify-between gap-3 border-t border-line py-1 text-sm">
+                    <span>{item.question}</span>
+                    <DeleteButton compact label="Delete question" onConfirm={() => removeQuestion(item.id)} />
                   </li>
                 ))}
               </ul>
@@ -134,12 +139,13 @@ function Dashboard() {
               <BlockHead title="Scent lab" href="/product-lab" aside={`${scents.filter((item) => item.approved).length} of ${scents.length} approved`} />
               <ul>
                 {scents.map((scent) => (
-                  <li key={scent.slot} className="flex items-baseline justify-between gap-3 border-t border-line py-2 text-sm">
-                    <span>
+                  <li key={scent.slot} className="flex items-center justify-between gap-3 border-t border-line py-1 text-sm">
+                    <span className="flex-1">
                       <span className="mr-2 font-serif text-olive">{scent.slot}</span>
                       {scent.workingName || scent.role}
                     </span>
                     <span className="text-xs tracking-widest text-muted">{scent.approved ? "Approved" : "Open"}</span>
+                    <DeleteButton compact label={`Delete scent ${scent.slot}`} onConfirm={() => removeScent(scent.slot)} />
                   </li>
                 ))}
               </ul>
@@ -185,9 +191,12 @@ function Dashboard() {
               <BlockHead title="Suppliers" href="/suppliers" aside={`${suppliers.filter((item) => item.approved).length} approved`} />
               <ul>
                 {suppliers.map((item) => (
-                  <li key={item.id} className="border-t border-line py-2 text-sm">
-                    <span className="text-xs tracking-widest text-muted">{item.category}</span>
-                    <span className="mt-1 block">{item.name}</span>
+                  <li key={item.id} className="flex items-center justify-between gap-3 border-t border-line py-1 text-sm">
+                    <span>
+                      <span className="text-xs tracking-widest text-muted">{item.category}</span>
+                      <span className="mt-1 block">{item.name}</span>
+                    </span>
+                    <DeleteButton compact label={`Delete ${item.name}`} onConfirm={() => removeSupplier(item.id)} />
                   </li>
                 ))}
               </ul>
@@ -282,6 +291,7 @@ function BlockHead({ title, href, aside }: { title: string; href: string; aside:
 
 function TaskLine({ task }: { task: Task }) {
   const updateTask = usePeculiar((s) => s.updateTask);
+  const removeTask = usePeculiar((s) => s.removeTask);
   const setOpenTask = usePeculiar((s) => s.setOpenTask);
   const done = task.status === "COMPLETE";
   return (
@@ -297,9 +307,10 @@ function TaskLine({ task }: { task: Task }) {
       >
         <Check className="size-4" />
       </button>
-      <button type="button" onClick={() => setOpenTask(task.id)} className={cn("py-2 text-left text-sm", done && "text-muted line-through")}>
+      <button type="button" onClick={() => setOpenTask(task.id)} className={cn("flex-1 py-2 text-left text-sm", done && "text-muted line-through")}>
         {task.title}
       </button>
+      <DeleteButton compact label={`Delete ${task.title}`} onConfirm={() => removeTask(task.id)} />
     </li>
   );
 }
@@ -329,19 +340,25 @@ function StepTile({ task }: { task: Task }) {
 }
 
 function DecisionLine({ item }: { item: Decision }) {
+  const removeDecision = usePeculiar((s) => s.removeDecision);
   return (
-    <li className="border-t border-line py-2">
-      <DecisionChip status={item.status} />
-      <p className="mt-1 text-sm">{item.decision}</p>
+    <li className="flex items-start justify-between gap-3 border-t border-line py-2">
+      <div>
+        <DecisionChip status={item.status} />
+        <p className="mt-1 text-sm">{item.decision}</p>
+      </div>
+      <DeleteButton compact label="Delete decision" onConfirm={() => removeDecision(item.id)} />
     </li>
   );
 }
 
 function ExperimentLine({ item }: { item: Experiment }) {
+  const removeExperiment = usePeculiar((s) => s.removeExperiment);
   return (
-    <li className="flex items-start justify-between gap-3 border-t border-line py-2">
-      <span className="text-sm">{item.name}</span>
+    <li className="flex items-center justify-between gap-3 border-t border-line py-1">
+      <span className="flex-1 text-sm">{item.name}</span>
       <StatusChip status={item.status} />
+      <DeleteButton compact label={`Delete ${item.name}`} onConfirm={() => removeExperiment(item.id)} />
     </li>
   );
 }

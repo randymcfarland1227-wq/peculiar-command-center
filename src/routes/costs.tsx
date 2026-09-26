@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Note, PageIntro, SectionTitle } from "@/components/fields";
+import { DeleteButton, Note, PageIntro, SectionTitle } from "@/components/fields";
 import { money } from "@/lib/peculiar/format";
 import { usePeculiar, variableCost } from "@/lib/peculiar/store";
 import { COST_FIELDS, COST_SOURCES, type CostKey, type CostSource } from "@/lib/peculiar/types";
@@ -13,6 +13,10 @@ function CostsPage() {
   const setCost = usePeculiar((s) => s.setCost);
   const budget = usePeculiar((s) => s.budget);
   const updateBudget = usePeculiar((s) => s.updateBudget);
+  const removeBudget = usePeculiar((s) => s.removeBudget);
+  const removeCostLine = usePeculiar((s) => s.removeCostLine);
+  // Lines deleted from the model are gone from every size.
+  const costFields = COST_FIELDS.filter(([key]) => economics.every((row) => row.lines[key]));
 
   const budgetTotals = budget.reduce(
     (sum, line) => ({
@@ -62,9 +66,14 @@ function CostsPage() {
                   </td>
                 ))}
               </tr>
-              {COST_FIELDS.map(([key, label]) => (
+              {costFields.map(([key, label]) => (
                 <tr key={key} className="border-t border-line">
-                  <td className="px-3 py-3">{label}</td>
+                  <td className="px-3 py-3">
+                    <span className="flex items-center justify-between gap-2">
+                      {label}
+                      <DeleteButton compact label={`Delete ${label} line`} onConfirm={() => removeCostLine(key)} />
+                    </span>
+                  </td>
                   {economics.map((row) => (
                     <td key={row.size} className="px-3 py-3">
                       <MoneyEdit
@@ -118,9 +127,12 @@ function CostsPage() {
                     onSource={(source) => setCost(row.size, "retail", { source })}
                   />
                 </div>
-                {COST_FIELDS.map(([key, label]) => (
+                {costFields.map(([key, label]) => (
                   <div key={key} className="mt-3">
-                    <p className="text-xs tracking-widest text-muted">{label}</p>
+                    <p className="flex items-center justify-between gap-2 text-xs tracking-widest text-muted">
+                      {label}
+                      <DeleteButton compact label={`Delete ${label} line`} onConfirm={() => removeCostLine(key)} />
+                    </p>
                     <MoneyEdit
                       amount={row.lines[key].amount}
                       source={row.lines[key].source}
@@ -145,11 +157,12 @@ function CostsPage() {
         />
         <ul className="border-t border-line">
           {budget.map((line) => (
-            <li key={line.id} className="grid gap-3 border-b border-line py-4 md:grid-cols-[1.2fr_repeat(3,1fr)] md:items-end">
+            <li key={line.id} className="grid gap-3 border-b border-line py-4 md:grid-cols-[1.2fr_repeat(3,1fr)_auto] md:items-end">
               <p className="font-serif text-lg">{line.label}</p>
               <NumberField label="Estimated" value={line.estimated} onChange={(estimated) => updateBudget(line.id, { estimated })} />
               <NumberField label="Actual" value={line.actual} onChange={(actual) => updateBudget(line.id, { actual })} />
               <NumberField label="Paid" value={line.paid} onChange={(paid) => updateBudget(line.id, { paid })} />
+              <DeleteButton compact label={`Delete ${line.label}`} onConfirm={() => removeBudget(line.id)} />
             </li>
           ))}
         </ul>

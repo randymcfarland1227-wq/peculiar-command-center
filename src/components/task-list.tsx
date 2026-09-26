@@ -6,6 +6,7 @@ import { usePeculiar } from "@/lib/peculiar/store";
 import { PRIORITIES, STATUSES, WORKSTREAM_LABEL, type Priority, type Task, type TaskStatus } from "@/lib/peculiar/types";
 import { PriorityChip, StatusChip } from "@/components/status-chip";
 import { StepTrackRow } from "@/components/step-track";
+import { DeleteButton } from "@/components/fields";
 
 export function TaskList({ tasks, empty }: { tasks: Task[]; empty?: string }) {
   const [scope, setScope] = useState<"active" | "all">("active");
@@ -14,6 +15,7 @@ export function TaskList({ tasks, empty }: { tasks: Task[]; empty?: string }) {
   const [query, setQuery] = useState("");
   const updateTask = usePeculiar((s) => s.updateTask);
   const setOpenTask = usePeculiar((s) => s.setOpenTask);
+  const removeTask = usePeculiar((s) => s.removeTask);
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -94,7 +96,7 @@ export function TaskList({ tasks, empty }: { tasks: Task[]; empty?: string }) {
             ) : null}
             <ul className="border-t border-line">
               {items.filter((task) => !task.steps?.length).map((task) => (
-                <li key={task.id} className="grid grid-cols-[auto_1fr] items-start gap-3 border-b border-line py-3">
+                <li key={task.id} className="grid grid-cols-[auto_1fr_auto] items-start gap-3 border-b border-line py-3">
                   <button
                     type="button"
                     aria-label={task.status === "COMPLETE" ? `Reopen ${task.title}` : `Complete ${task.title}`}
@@ -127,6 +129,7 @@ export function TaskList({ tasks, empty }: { tasks: Task[]; empty?: string }) {
                     </div>
                     {task.notes ? <p className="mt-2 text-sm leading-relaxed text-muted">{task.notes}</p> : null}
                   </div>
+                  <DeleteButton compact className="mt-1" label={`Delete ${task.title}`} onConfirm={() => removeTask(task.id)} />
                 </li>
               ))}
             </ul>

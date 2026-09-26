@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Field, GhostButton, PageIntro, SectionTitle, SolidButton, TextInput, AreaInput } from "@/components/fields";
+import { Field, PageIntro, SectionTitle, SolidButton, TextInput, AreaInput, DeleteButton } from "@/components/fields";
 import { StatusChip } from "@/components/status-chip";
 import { uid, usePeculiar } from "@/lib/peculiar/store";
 import { STATUSES, type ResearchQuestion, type TaskStatus } from "@/lib/peculiar/types";
@@ -102,9 +102,7 @@ function ResearchPage() {
                 {item.category} · {item.owner}
                 {item.due ? ` · due ${item.due}` : ""}
               </span>
-              <GhostButton type="button" onClick={() => removeQuestion(item.id)}>
-                Remove
-              </GhostButton>
+              <DeleteButton label="Delete question" onConfirm={() => removeQuestion(item.id)} />
             </div>
           </li>
         ))}

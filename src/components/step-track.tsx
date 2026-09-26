@@ -4,6 +4,7 @@ import { prettyDate } from "@/lib/peculiar/format";
 import { stepProgress, usePeculiar } from "@/lib/peculiar/store";
 import type { Task } from "@/lib/peculiar/types";
 import { PriorityChip, StatusChip } from "@/components/status-chip";
+import { DeleteButton } from "@/components/fields";
 
 /** Task ids named in a stepped task's dependencies that are not complete yet. */
 export function useWaitingOn(task: Task) {
@@ -19,6 +20,8 @@ export function useWaitingOn(task: Task) {
 export function StepTrack({ task, index }: { task: Task; index?: number }) {
   const updateStep = usePeculiar((s) => s.updateStep);
   const updateTask = usePeculiar((s) => s.updateTask);
+  const removeTask = usePeculiar((s) => s.removeTask);
+  const removeStep = usePeculiar((s) => s.removeStep);
   const setOpenTask = usePeculiar((s) => s.setOpenTask);
   const progress = stepProgress(task);
   const waitingOn = useWaitingOn(task);
@@ -40,17 +43,20 @@ export function StepTrack({ task, index }: { task: Task; index?: number }) {
             {task.title}
           </button>
         </div>
-        <button
-          type="button"
-          aria-label={done ? `Reopen ${task.title}` : `Complete ${task.title}`}
-          onClick={() => updateTask(task.id, { status: done ? "IN PROGRESS" : "COMPLETE" })}
-          className={cn(
-            "flex h-11 w-11 shrink-0 items-center justify-center border",
-            done ? "border-forest bg-forest text-paper" : "border-line bg-paper",
-          )}
-        >
-          <Check className="size-4" />
-        </button>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <button
+            type="button"
+            aria-label={done ? `Reopen ${task.title}` : `Complete ${task.title}`}
+            onClick={() => updateTask(task.id, { status: done ? "IN PROGRESS" : "COMPLETE" })}
+            className={cn(
+              "flex h-11 w-11 shrink-0 items-center justify-center border",
+              done ? "border-forest bg-forest text-paper" : "border-line bg-paper",
+            )}
+          >
+            <Check className="size-4" />
+          </button>
+          <DeleteButton compact label={`Delete ${task.title}`} onConfirm={() => removeTask(task.id)} />
+        </div>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <PriorityChip priority={task.priority} />
@@ -85,6 +91,7 @@ export function StepTrack({ task, index }: { task: Task; index?: number }) {
                 </span>
                 <span className="text-xs tracking-widest text-ink">{item.label}</span>
               </label>
+              <div className="mt-1 flex gap-1">
               <input
                 id={`${task.id}-${item.id}`}
                 value={item.value}
@@ -92,10 +99,12 @@ export function StepTrack({ task, index }: { task: Task; index?: number }) {
                 placeholder={item.hint}
                 title={item.hint}
                 className={cn(
-                  "mt-1 h-11 w-full border bg-paper px-2 text-sm text-ink placeholder:text-muted",
+                  "h-11 w-full min-w-0 border bg-paper px-2 text-sm text-ink placeholder:text-muted",
                   isNext ? "border-forest" : "border-line",
                 )}
               />
+              <DeleteButton compact label={`Delete field ${item.label}`} onConfirm={() => removeStep(task.id, item.id)} />
+              </div>
             </li>
           );
         })}

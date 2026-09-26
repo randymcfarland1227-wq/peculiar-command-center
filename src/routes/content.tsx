@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { AreaInput, Field, GhostButton, PageIntro, SolidButton, TextInput } from "@/components/fields";
+import { AreaInput, Field, PageIntro, SolidButton, TextInput, DeleteButton } from "@/components/fields";
 import { StatusChip } from "@/components/status-chip";
 import { uid, usePeculiar } from "@/lib/peculiar/store";
 import { PILLARS, STATUSES, type ContentItem, type TaskStatus } from "@/lib/peculiar/types";
@@ -76,9 +76,7 @@ function ContentPage() {
             <Field label="Caption / notes">
               <AreaInput value={item.caption} onChange={(event) => updateContent(item.id, { caption: event.target.value })} />
             </Field>
-            <GhostButton type="button" className="mt-3" onClick={() => removeContent(item.id)}>
-              Remove
-            </GhostButton>
+            <DeleteButton label="Delete" className="mt-3" onConfirm={() => removeContent(item.id)} />
           </li>
         ))}
       </ul>

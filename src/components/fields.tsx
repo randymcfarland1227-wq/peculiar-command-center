@@ -5,6 +5,8 @@ import type {
   SelectHTMLAttributes,
   TextareaHTMLAttributes,
 } from "react";
+import { Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 
 export const controlClass =
@@ -99,6 +101,51 @@ export function SolidButton({
       className={cn("h-11 bg-forest px-4 text-sm text-paper hover:bg-olive disabled:opacity-40", className)}
     >
       {children}
+    </button>
+  );
+}
+
+/**
+ * Delete that needs a second tap. The first tap arms it ("Tap again to delete"),
+ * and it disarms itself after a few seconds, so a stray tap never removes anything.
+ */
+export function DeleteButton({
+  onConfirm,
+  label = "Delete",
+  compact,
+  className,
+}: {
+  onConfirm: () => void;
+  label?: string;
+  compact?: boolean;
+  className?: string;
+}) {
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const timer = window.setTimeout(() => setArmed(false), 3000);
+    return () => window.clearTimeout(timer);
+  }, [armed]);
+  return (
+    <button
+      type="button"
+      aria-label={armed ? `Confirm: ${label}` : label}
+      title={armed ? "Tap again to delete" : label}
+      onClick={(event) => {
+        event.stopPropagation();
+        event.preventDefault();
+        if (armed) onConfirm();
+        else setArmed(true);
+      }}
+      className={cn(
+        "inline-flex h-11 shrink-0 items-center justify-center gap-2 border text-sm",
+        compact ? (armed ? "px-3" : "w-11") : "px-4",
+        armed ? "border-olive bg-olive text-paper" : "border-line bg-sheet text-muted hover:text-ink",
+        className,
+      )}
+    >
+      <Trash2 className="size-4" />
+      {armed ? <span>Tap again</span> : compact ? null : <span>{label}</span>}
     </button>
   );
 }

@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 import { useEffect } from "react";
-import { Field, SelectInput, TextInput, AreaInput, GhostButton, SolidButton } from "@/components/fields";
+import { DeleteButton, Field, SelectInput, TextInput, AreaInput, GhostButton, SolidButton } from "@/components/fields";
 import { PRIORITIES, STATUSES, WORKSTREAMS, WORKSTREAM_LABEL, LAUNCH_AREAS } from "@/lib/peculiar/types";
 import { usePeculiar } from "@/lib/peculiar/store";
 
@@ -11,6 +11,7 @@ export function TaskDrawer() {
   const task = tasks.find((item) => item.id === openTaskId) ?? null;
   const updateTask = usePeculiar((s) => s.updateTask);
   const updateStep = usePeculiar((s) => s.updateStep);
+  const removeStep = usePeculiar((s) => s.removeStep);
   const updateDraft = usePeculiar((s) => s.updateDraft);
   const commitDraft = usePeculiar((s) => s.commitDraft);
   const cancelDraft = usePeculiar((s) => s.cancelDraft);
@@ -103,9 +104,14 @@ export function TaskDrawer() {
             <div className="grid gap-3 border border-line bg-sheet p-3">
               <p className="text-xs tracking-widest text-olive">Fields, in order</p>
               {task.steps.map((item, at) => (
-                <Field key={item.id} label={`${at + 1}. ${item.label}`}>
-                  <TextInput value={item.value} placeholder={item.hint} onChange={(event) => updateStep(task.id, item.id, event.target.value)} />
-                </Field>
+                <div key={item.id} className="flex items-end gap-2">
+                  <div className="min-w-0 flex-1">
+                    <Field label={`${at + 1}. ${item.label}`}>
+                      <TextInput value={item.value} placeholder={item.hint} onChange={(event) => updateStep(task.id, item.id, event.target.value)} />
+                    </Field>
+                  </div>
+                  <DeleteButton compact label={`Delete field ${item.label}`} onConfirm={() => removeStep(task.id, item.id)} />
+                </div>
               ))}
             </div>
           ) : null}
@@ -162,14 +168,12 @@ export function TaskDrawer() {
               Add task
             </SolidButton>
           ) : (
-            <GhostButton
-              type="button"
-              onClick={() => {
+            <DeleteButton
+              label="Delete task"
+              onConfirm={() => {
                 if (task) removeTask(task.id);
               }}
-            >
-              Remove
-            </GhostButton>
+            />
           )}
           <GhostButton type="button" onClick={close}>
             Close

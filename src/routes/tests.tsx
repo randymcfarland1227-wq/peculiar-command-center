@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Field, GhostButton, PageIntro, SolidButton, TextInput, AreaInput } from "@/components/fields";
+import { Field, PageIntro, SolidButton, TextInput, AreaInput, DeleteButton } from "@/components/fields";
 import { uid, usePeculiar } from "@/lib/peculiar/store";
 import type { BurnTest } from "@/lib/peculiar/types";
 
@@ -79,9 +79,7 @@ function TestsPage() {
               ))}
             </div>
             <div className="mt-3">
-              <GhostButton type="button" onClick={() => removeTest(test.id)}>
-                Remove test
-              </GhostButton>
+              <DeleteButton label="Delete test" onConfirm={() => removeTest(test.id)} />
             </div>
           </li>
         ))}

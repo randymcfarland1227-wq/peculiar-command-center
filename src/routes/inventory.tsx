@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Field, GhostButton, Note, PageIntro, SolidButton, TextInput } from "@/components/fields";
+import { Field, Note, PageIntro, SolidButton, TextInput, DeleteButton } from "@/components/fields";
 import { uid, usePeculiar } from "@/lib/peculiar/store";
 import { SIZES, type Size, type Vessel } from "@/lib/peculiar/types";
 
@@ -111,9 +111,7 @@ function InventoryPage() {
               <TextInput value={item.notes} onChange={(event) => updateVessel(item.id, { notes: event.target.value })} />
             </Field>
             <div className="mt-3">
-              <GhostButton type="button" onClick={() => removeVessel(item.id)}>
-                Remove
-              </GhostButton>
+              <DeleteButton label="Delete vessel" onConfirm={() => removeVessel(item.id)} />
             </div>
           </li>
         ))}

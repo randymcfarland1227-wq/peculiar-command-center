@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Field, GhostButton, PageIntro, SolidButton, TextInput } from "@/components/fields";
+import { Field, PageIntro, SolidButton, TextInput, DeleteButton } from "@/components/fields";
 import { uid, usePeculiar } from "@/lib/peculiar/store";
 import { SUPPLIER_CATEGORIES, type Supplier, type SupplierCategory } from "@/lib/peculiar/types";
 
@@ -125,9 +125,7 @@ function SupplierCard({
           <input type="checkbox" checked={item.approved} onChange={(event) => onChange({ approved: event.target.checked })} className="size-4 accent-forest" />
           Approved
         </label>
-        <GhostButton type="button" onClick={onRemove}>
-          Remove
-        </GhostButton>
+        <DeleteButton label="Delete supplier" onConfirm={onRemove} />
       </div>
     </li>
   );

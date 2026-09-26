@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { AreaInput, Field, GhostButton, PageIntro, SolidButton, TextInput } from "@/components/fields";
+import { AreaInput, Field, PageIntro, SolidButton, TextInput, DeleteButton } from "@/components/fields";
 import { DecisionChip } from "@/components/status-chip";
 import { prettyDate } from "@/lib/peculiar/format";
 import { uid, usePeculiar } from "@/lib/peculiar/store";
@@ -116,9 +116,7 @@ function DecisionsPage() {
                       ))}
                     </select>
                   </Field>
-                  <GhostButton type="button" onClick={() => removeDecision(item.id)}>
-                    Remove
-                  </GhostButton>
+                  <DeleteButton label="Delete decision" onConfirm={() => removeDecision(item.id)} />
                 </div>
               ) : (
                 <p className="mt-2 text-sm text-muted">{item.reason}</p>

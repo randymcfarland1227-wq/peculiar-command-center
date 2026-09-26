@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { AreaInput, Field, GhostButton, PageIntro, SelectInput, SolidButton, TextInput } from "@/components/fields";
+import { AreaInput, Field, PageIntro, SelectInput, SolidButton, TextInput, DeleteButton } from "@/components/fields";
 import { uid, usePeculiar } from "@/lib/peculiar/store";
 import { ACQUIRE_STATUSES, type AcquireStatus, type Acquisition } from "@/lib/peculiar/types";
 
@@ -164,9 +164,7 @@ function Detail({
               Open site
             </a>
           ) : null}
-          <GhostButton type="button" onClick={onRemove}>
-            Remove
-          </GhostButton>
+          <DeleteButton label="Delete" onConfirm={onRemove} />
         </div>
       </aside>
     </div>

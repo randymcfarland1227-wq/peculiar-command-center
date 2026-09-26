@@ -32,6 +32,11 @@ interface UiState {
 interface Actions {
   updateTask: (id: string, patch: Partial<Task>) => void;
   updateStep: (taskId: string, stepId: string, value: string) => void;
+  removeStep: (taskId: string, stepId: string) => void;
+  removeExperiment: (id: string) => void;
+  removeScent: (slot: string) => void;
+  removeBudget: (id: string) => void;
+  removeCostLine: (key: CostKey) => void;
   addTask: (task: Task) => void;
   removeTask: (id: string) => void;
   startDraft: (partial?: Partial<Task>) => void;
@@ -153,6 +158,26 @@ export const usePeculiar = create<Store>()(
             return withComplete({ ...task, steps }, { status: statusFromSteps(task.status, steps) });
           }),
         })),
+      removeStep: (taskId, stepId) =>
+        set((s) => ({
+          tasks: s.tasks.map((task) => {
+            if (task.id !== taskId || !task.steps) return task;
+            const steps = task.steps.filter((item) => item.id !== stepId);
+            if (!steps.length) return { ...task, steps };
+            return withComplete({ ...task, steps }, { status: statusFromSteps(task.status, steps) });
+          }),
+        })),
+      removeExperiment: (id) => set((s) => ({ experiments: s.experiments.filter((item) => item.id !== id) })),
+      removeScent: (slot) => set((s) => ({ scents: s.scents.filter((item) => item.slot !== slot) })),
+      removeBudget: (id) => set((s) => ({ budget: s.budget.filter((item) => item.id !== id) })),
+      removeCostLine: (key) =>
+        set((s) => ({
+          economics: s.economics.map((row) => {
+            const lines = { ...row.lines };
+            delete lines[key];
+            return { ...row, lines };
+          }),
+        })),
       addTask: (task) => set((s) => ({ tasks: [task, ...s.tasks], draft: null, openTaskId: task.id })),
       removeTask: (id) =>
         set((s) => ({
@@ -207,6 +232,7 @@ export const usePeculiar = create<Store>()(
           economics: s.economics.map((row) => {
             if (row.size !== size) return row;
             if (key === "retail") return { ...row, retail: { ...row.retail, ...patch } };
+            if (!row.lines[key]) return row;
             return { ...row, lines: { ...row.lines, [key]: { ...row.lines[key], ...patch } } };
           }),
         })),
@@ -294,9 +320,10 @@ const ORIGINAL_STEP_NOTES = new Set([
 function mergeProductLabTracks(saved: Task[] | undefined, fresh: Task[]): Task[] {
   if (!Array.isArray(saved)) return fresh;
   const tracks = productLabTracks();
-  if (saved.some((task) => task.id === tracks[0].id)) return saved;
   const old = new Map(saved.map((task) => [task.id, task]));
   const oldIds = new Set(tracks.flatMap((track) => track.steps?.map((item) => item.id) ?? []));
+  // Only migrate while the old per-step tasks are still saved, so deleting a track never brings it back.
+  if (!saved.some((task) => oldIds.has(task.id))) return saved;
   const migrated = tracks.map((track) => {
     const carried: string[] = [];
     const steps = (track.steps ?? []).map((item) => {
@@ -360,7 +387,7 @@ function mergeScents(saved: Scent[] | undefined, fresh: Scent[]): Scent[] {
 }
 
 export function variableCost(row: Store["economics"][number]) {
-  return Object.values(row.lines).reduce((sum, cell) => sum + (Number(cell.amount) || 0), 0);
+  return Object.values(row.lines).reduce((sum, cell) => sum + (Number(cell?.amount) || 0), 0);
 }
 
 /** Filled fields out of all fields on a stepped task, and the first one still open. */
