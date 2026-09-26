@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { AreaInput, Field, Note, PageIntro, SectionTitle, TextInput } from "@/components/fields";
 import { StatusChip } from "@/components/status-chip";
-import { StepTrack } from "@/components/step-track";
+import { StepTrackRow } from "@/components/step-track";
 import { TaskList } from "@/components/task-list";
 import { usePeculiar } from "@/lib/peculiar/store";
 import { STATUSES } from "@/lib/peculiar/types";
@@ -36,11 +36,9 @@ function ProductLabPage() {
 
       <section className="mb-10">
         <SectionTitle title="Build sequence" aside={`${tracks.filter((task) => task.status === "COMPLETE").length} of ${tracks.length} complete`} />
-        <Note>Work each row left to right. A field counts as done once it has an answer, and the row completes when every field is filled.</Note>
-        <div className="mt-4 grid gap-3">
-          {tracks.map((task, at) => (
-            <StepTrack key={task.id} task={task} index={at + 1} />
-          ))}
+        <Note>Left to right is build order. Fill each task's fields top to bottom. A task completes when every field has an answer, or when you check it off.</Note>
+        <div className="mt-4">
+          <StepTrackRow tasks={tracks} numbered />
         </div>
       </section>
 

@@ -15,9 +15,10 @@ export function useWaitingOn(task: Task) {
   return tasks.filter((item) => ids.includes(item.id) && item.status !== "COMPLETE");
 }
 
-/** A component task shown as one row of fields, filled in left to right. */
+/** A component task shown as one column card. Its fields run top to bottom, in order. */
 export function StepTrack({ task, index }: { task: Task; index?: number }) {
   const updateStep = usePeculiar((s) => s.updateStep);
+  const updateTask = usePeculiar((s) => s.updateTask);
   const setOpenTask = usePeculiar((s) => s.setOpenTask);
   const progress = stepProgress(task);
   const waitingOn = useWaitingOn(task);
@@ -26,45 +27,53 @@ export function StepTrack({ task, index }: { task: Task; index?: number }) {
   const done = task.status === "COMPLETE";
 
   return (
-    <article className={cn("min-w-0 border border-line bg-sheet p-4", waitingOn.length > 0 && !done && "bg-paper")}>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
-        <div className="flex items-baseline gap-3">
-          {index !== undefined ? <span className="font-serif text-2xl tabular-nums text-olive">{String(index).padStart(2, "0")}</span> : null}
-          <button type="button" onClick={() => setOpenTask(task.id)} className={cn("text-left font-serif text-2xl", done && "text-muted")}>
+    <article
+      className={cn(
+        "flex w-72 shrink-0 snap-start flex-col border border-line bg-sheet p-4 lg:w-auto lg:min-w-44 lg:flex-1",
+        waitingOn.length > 0 && !done && "bg-paper",
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          {index !== undefined ? <span className="block font-serif text-2xl tabular-nums text-olive">{String(index).padStart(2, "0")}</span> : null}
+          <button type="button" onClick={() => setOpenTask(task.id)} className={cn("text-left font-serif text-2xl", done && "text-muted line-through")}>
             {task.title}
           </button>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <PriorityChip priority={task.priority} />
-          <StatusChip status={task.status} />
-          {task.due ? <span className="text-xs tracking-widest text-muted">Due {prettyDate(task.due)}</span> : null}
-          <span className="text-xs tabular-nums tracking-widest text-muted">
-            {progress.done} of {progress.total}
-          </span>
-        </div>
+        <button
+          type="button"
+          aria-label={done ? `Reopen ${task.title}` : `Complete ${task.title}`}
+          onClick={() => updateTask(task.id, { status: done ? "IN PROGRESS" : "COMPLETE" })}
+          className={cn(
+            "flex h-11 w-11 shrink-0 items-center justify-center border",
+            done ? "border-forest bg-forest text-paper" : "border-line bg-paper",
+          )}
+        >
+          <Check className="size-4" />
+        </button>
       </div>
-      <div className="mt-2 h-1 bg-cream">
-        <div className="h-1 bg-forest" style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }} />
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <PriorityChip priority={task.priority} />
+        <StatusChip status={task.status} />
+      </div>
+      {task.due ? <p className="mt-2 text-xs tracking-widest text-muted">Due {prettyDate(task.due)}</p> : null}
+      <div className="mt-3 flex gap-1" aria-hidden="true">
+        {steps.map((item) => (
+          <span key={item.id} className={cn("h-1 flex-1", item.value.trim() ? "bg-forest" : "bg-cream")} />
+        ))}
       </div>
       {waitingOn.length > 0 && !done ? (
         <p className="mt-3 text-xs tracking-widest text-olive">Starts after {waitingOn.map((item) => item.title).join(" · ")}</p>
       ) : null}
-      {task.notes ? <p className="mt-3 text-sm leading-relaxed text-muted whitespace-pre-line">{task.notes}</p> : null}
+      {task.notes ? <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted">{task.notes}</p> : null}
 
-      <ol className="-mx-4 mt-4 flex snap-x gap-2 overflow-x-auto px-4 pb-2">
+      <ol className="mt-4 flex flex-col gap-3">
         {steps.map((item, at) => {
           const filled = Boolean(item.value.trim());
           const isNext = at === nextIndex;
           const later = !filled && nextIndex >= 0 && at > nextIndex;
           return (
-            <li
-              key={item.id}
-              className={cn(
-                "flex w-44 shrink-0 snap-start flex-col border p-3 sm:w-auto sm:min-w-40 sm:flex-1",
-                filled ? "border-forest bg-paper" : isNext ? "border-forest bg-sheet" : "border-line bg-paper",
-                later && "opacity-60 focus-within:opacity-100",
-              )}
-            >
+            <li key={item.id} className={cn(later && "opacity-60 focus-within:opacity-100")}>
               <label htmlFor={`${task.id}-${item.id}`} className="flex items-center gap-2">
                 <span
                   className={cn(
@@ -76,18 +85,32 @@ export function StepTrack({ task, index }: { task: Task; index?: number }) {
                 </span>
                 <span className="text-xs tracking-widest text-ink">{item.label}</span>
               </label>
-              <span className="mt-1 min-h-8 text-xs leading-snug text-muted">{isNext ? "Up next · " : ""}{item.hint}</span>
               <input
                 id={`${task.id}-${item.id}`}
                 value={item.value}
                 onChange={(event) => updateStep(task.id, item.id, event.target.value)}
-                placeholder={item.label}
-                className="mt-2 h-11 w-full border border-line bg-sheet px-2 text-sm text-ink placeholder:text-muted"
+                placeholder={item.hint}
+                title={item.hint}
+                className={cn(
+                  "mt-1 h-11 w-full border bg-paper px-2 text-sm text-ink placeholder:text-muted",
+                  isNext ? "border-forest" : "border-line",
+                )}
               />
             </li>
           );
         })}
       </ol>
     </article>
+  );
+}
+
+/** Stepped tasks laid out side by side, scrolling sideways when they don't fit. */
+export function StepTrackRow({ tasks, numbered }: { tasks: Task[]; numbered?: boolean }) {
+  return (
+    <div className="-mx-4 flex snap-x items-start gap-3 overflow-x-auto px-4 pb-2 md:mx-0 md:px-0">
+      {tasks.map((task, at) => (
+        <StepTrack key={task.id} task={task} index={numbered ? at + 1 : undefined} />
+      ))}
+    </div>
   );
 }

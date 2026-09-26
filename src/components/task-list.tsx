@@ -5,7 +5,7 @@ import { prettyDate } from "@/lib/peculiar/format";
 import { usePeculiar } from "@/lib/peculiar/store";
 import { PRIORITIES, STATUSES, WORKSTREAM_LABEL, type Priority, type Task, type TaskStatus } from "@/lib/peculiar/types";
 import { PriorityChip, StatusChip } from "@/components/status-chip";
-import { StepTrack } from "@/components/step-track";
+import { StepTrackRow } from "@/components/step-track";
 
 export function TaskList({ tasks, empty }: { tasks: Task[]; empty?: string }) {
   const [scope, setScope] = useState<"active" | "all">("active");
@@ -87,11 +87,11 @@ export function TaskList({ tasks, empty }: { tasks: Task[]; empty?: string }) {
         [...groups.entries()].map(([section, items]) => (
           <section key={section} className="mb-6">
             <h3 className="mb-2 text-xs tracking-widest text-olive">{section}</h3>
-            {items.filter((task) => task.steps?.length).map((task) => (
-              <div key={task.id} className="mb-3">
-                <StepTrack task={task} />
+            {items.some((task) => task.steps?.length) ? (
+              <div className="mb-3">
+                <StepTrackRow tasks={items.filter((task) => task.steps?.length)} />
               </div>
-            ))}
+            ) : null}
             <ul className="border-t border-line">
               {items.filter((task) => !task.steps?.length).map((task) => (
                 <li key={task.id} className="grid grid-cols-[auto_1fr] items-start gap-3 border-b border-line py-3">

@@ -371,20 +371,9 @@ export function stepProgress(task: Task) {
   return { done, total: steps.length, next };
 }
 
-/** Each field of a stepped task counts as one unit, so a half-filled component shows as half done. */
 export function countComplete(tasks: Task[]) {
-  let total = 0;
-  let done = 0;
-  for (const task of tasks) {
-    if (task.steps?.length) {
-      const progress = stepProgress(task);
-      total += progress.total;
-      done += task.status === "COMPLETE" ? progress.total : progress.done;
-    } else {
-      total += 1;
-      if (task.status === "COMPLETE") done += 1;
-    }
-  }
+  const total = tasks.length;
+  const done = tasks.filter((task) => task.status === "COMPLETE").length;
   return { done, total, percent: total ? Math.round((done / total) * 100) : 0 };
 }
 
