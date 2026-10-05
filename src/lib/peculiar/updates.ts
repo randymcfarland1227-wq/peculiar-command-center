@@ -1,5 +1,6 @@
+import { GUIDES } from "./guides";
 import { AFTER_LAUNCH_IDS, CUT_TASK_ALIASES, CUT_TASK_IDS, combinedTasks, economics, scents, skus } from "./seed";
-import type { Decision, PeculiarData, Priority, SizeModel, Task, TaskStatus, TaskStep } from "./types";
+import type { Decision, Experiment, PeculiarData, ResearchQuestion, Priority, SizeModel, Task, TaskStatus, TaskStep } from "./types";
 
 /**
  * One-time changes to saved data. Each runs once per browser, is recorded in
@@ -10,6 +11,7 @@ const UPDATES: { id: string; apply: (data: PeculiarData) => PeculiarData }[] = [
   { id: "2026-10-05-combine-tasks", apply: combineTasks },
   { id: "2026-10-05-regular-large", apply: regularAndLarge },
   { id: "2026-10-05-supplies", apply: recordSupplies },
+  { id: "2026-10-05-wicks-labels-research", apply: wicksLabelsResearch },
 ];
 
 export function applyUpdates(data: PeculiarData): PeculiarData {
@@ -19,7 +21,16 @@ export function applyUpdates(data: PeculiarData): PeculiarData {
     next = update.apply(next);
     next = { ...next, appliedUpdates: [...next.appliedUpdates, update.id] };
   }
-  return next;
+  return { ...next, tasks: withGuides(next.tasks) };
+}
+
+/** Copies the current how-to text onto matching fields. Guides are reference text, so they always refresh. */
+function withGuides(tasks: Task[]): Task[] {
+  return tasks.map((task) => {
+    const guide = GUIDES[task.id];
+    if (!guide || !task.steps) return task;
+    return { ...task, steps: task.steps.map((item) => (guide[item.id] ? { ...item, how: guide[item.id] } : item)) };
+  });
 }
 
 function today() {
@@ -290,4 +301,207 @@ function recordSupplies(data: PeculiarData): PeculiarData {
   );
 
   return { ...data, tasks, scents: [...saved, ...missing], suppliers, acquisitions, budget, blockers, decisions, questions };
+}
+
+/** Swaps a value only while it still reads exactly as an earlier update wrote it. */
+const REANSWER: Record<string, Record<string, [string, string]>> = {
+  "pl-wax": {
+    p1: ["One bought: 10 lb bag from Amazon", "One bought: Hearth & Harbor pure soy, 10 lb (Amazon)"],
+    p5: ["Amazon wax, 10 lb bag ($33)", "Hearth & Harbor pure soy wax flakes, 10 lb ($33, Amazon)"],
+  },
+};
+
+/** Fields answered by the wick order, the in-house labels, and the home-business lookup. */
+const NEW_ANSWERS: Record<string, Record<string, string>> = {
+  "pl-wicks": {
+    p18: "Wood (Jiozermi, 15 mm). Cotton wicks that came with the wax are the backup",
+    p19: "Amazon: Jiozermi wood wicks 15 × 150 mm, 50 with metal bases, $5.99",
+  },
+  "cm-costs": {
+    m4: "$0.12 per wood wick ($5.99 for 50)",
+    m8: "Made in-house: sticker paper and ink. Too small to track yet",
+  },
+  "co-legal": {
+    c11: "Allowed: no sign, no customers at the house, no outside employees. No permit found; no trader's license (maker exemption)",
+  },
+};
+
+const NEW_DECISIONS: Decision[] = [
+  {
+    id: "d21",
+    date: "2026-10-05",
+    decision: "Labels are made in-house: home printer, sticker paper, cut on a Silhouette Cameo.",
+    category: "Brand",
+    status: "DECIDED",
+    reason: "No minimum order, and designs can change batch to batch.",
+    evidence: "Printer and Cameo already owned; sticker paper sorted.",
+    revisitWhen: "If print quality or time per label becomes a problem.",
+    workstreams: ["brand", "commerce"],
+  },
+  {
+    id: "d22",
+    date: "2026-10-05",
+    decision: "Wood wicks are the first wick tested.",
+    category: "Wick",
+    status: "WORKING ASSUMPTION",
+    reason: "The crackle and wide, low flame suit the brand. Cotton wicks that came with the wax are the fallback.",
+    evidence: "Jiozermi 15 mm wood wicks bought on Amazon.",
+    revisitWhen: "After burn tests in each jar width. Wide jars may need two wicks.",
+    workstreams: ["product-lab"],
+  },
+  {
+    id: "d23",
+    date: "2026-09-30",
+    decision: "The brand stays anonymous: no founder name or face.",
+    category: "Brand",
+    status: "DECIDED",
+    reason: "The brand's voice does the work a founder's face would. The mystery is part of the appeal.",
+    evidence: "Founder preference.",
+    revisitWhen: "Only by choice, later.",
+    workstreams: ["brand", "launch", "company"],
+  },
+];
+
+const OLD_RESEARCH: Record<string, { decisions?: Partial<Decision>; was: string }> = {
+  d6: {
+    was: "Soy-coconut, or a soy-dominant coconut blend, is the leading wax.",
+    decisions: {
+      date: "2026-10-05",
+      decision: "The first batch uses Hearth & Harbor pure soy wax.",
+      status: "DECIDED",
+      reason: "Bought: 10 lb of soy flakes, rated for up to 10% fragrance.",
+      evidence: "Amazon order, $33.",
+      revisitWhen: "If hot throw is weak in the test jars.",
+    },
+  },
+};
+
+const OLD_QUESTIONS: Record<string, { was: string; patch: Partial<ResearchQuestion> }> = {
+  q1: {
+    was: "Which soy-coconut wax performs best?",
+    patch: {
+      question: "Does the soy wax throw well enough at 8%?",
+      why: "The wax is bought. Pure soy can have a softer hot throw than blends.",
+      evidenceNeeded: "Cold and hot throw notes from one test jar per scent.",
+      decisionAffected: "Launch wax.",
+    },
+  },
+  q9: {
+    was: "Which recycled-glass supplier can hit the size bands?",
+    patch: { status: "COMPLETE", evidenceNeeded: "Answered: Glassnow 10 oz and 13.5 oz recycled jars." },
+  },
+};
+
+const OLD_EXPERIMENTS: Record<string, { was: string; patch: Partial<Experiment> }> = {
+  "exp-wax": {
+    was: "Soy-coconut wax test",
+    patch: {
+      name: "Soy wax test pours",
+      hypothesis: "The Hearth & Harbor soy wax holds 8% fragrance with a clean, strong hot throw.",
+      method: "Pour one 10 oz test jar per scent at 8% with a wood wick. Cure 1–2 weeks, then compare cold and hot throw.",
+      materials: "Hearth & Harbor soy wax (10 lb), Jiozermi wood wicks, CandleScience oils.",
+      nextAction: "Pour the test jars when the oils arrive (Oct 8–13).",
+    },
+  },
+  "exp-scent": {
+    was: "Scent 01 development",
+    patch: {
+      name: "Six-blend trials",
+      hypothesis: "The six starting blends in the Candle Lab sheet smell as described once they're in wax.",
+      method: "Mix 10 g of each blend by weight and check on blotters. Then pour one test jar each and adjust ratios using the sheet's notes.",
+      materials: "14 CandleScience oils (order R157666947).",
+      nextAction: "Mix the 10 g trials when the oils arrive (Oct 8–13).",
+      status: "PLANNING",
+    },
+  },
+};
+
+function wicksLabelsResearch(data: PeculiarData): PeculiarData {
+  const tasks = data.tasks.map((task) => {
+    if (!task.steps) return task;
+    const swap = REANSWER[task.id] ?? {};
+    const fresh = NEW_ANSWERS[task.id] ?? {};
+    const steps = task.steps.map((item) => {
+      if (swap[item.id] && item.value === swap[item.id][0]) return { ...item, value: swap[item.id][1] };
+      if (fresh[item.id] && !item.value.trim()) return { ...item, value: fresh[item.id] };
+      return item;
+    });
+    return settle({ ...task, steps });
+  });
+
+  const suppliers = data.suppliers.map((item) => {
+    if (item.id === "sup-wax" && item.name === "Amazon")
+      return {
+        ...item,
+        product: "Hearth & Harbor pure soy wax flakes, 10 lb",
+        website: "https://www.amazon.com/dp/B09ZG8P7ZB",
+        notes: "Rated for up to 10% fragrance. Came with 100 cotton wicks (for 2.75–3.15 in. jars) and wick stickers.",
+      };
+    if (item.id === "sup-wick" && item.name === "Unchosen")
+      return {
+        ...item,
+        name: "Amazon (Jiozermi)",
+        product: "Wood wicks, 15 × 150 mm, with metal bases",
+        website: "https://www.amazon.com/dp/B0BN78SDK7",
+        sampleOrdered: true,
+        unitCost: "$5.99 for 50",
+        landedCost: "$0.12 per wick",
+        notes: "Test in each jar width. Wide jars may need two.",
+      };
+    if (item.id === "sup-label" && item.name === "Unchosen")
+      return {
+        ...item,
+        name: "In-house",
+        product: "Labels printed at home and cut on a Silhouette Cameo",
+        approved: true,
+        unitCost: "Sticker paper and ink",
+        notes: "No supplier needed.",
+      };
+    return item;
+  });
+
+  const acquisitions = data.acquisitions.map((item) => {
+    if (item.status !== "NEED") return item;
+    if (item.id === "ac-wick") return { ...item, status: "ORDERED" as const, price: item.price || "$5.99", url: item.url || "https://www.amazon.com/dp/B0BN78SDK7" };
+    if (item.id === "ac-label") return { ...item, status: "STAPLE" as const, details: "Made in-house: printer, sticker paper, Silhouette Cameo." };
+    return item;
+  });
+  const withWaxLink = acquisitions.map((item) =>
+    item.id === "ac-wax" && !item.url ? { ...item, url: "https://www.amazon.com/dp/B09ZG8P7ZB" } : item,
+  );
+
+  const budget = data.budget.map((line) => (line.id === "bud-wick" && !line.actual ? { ...line, actual: 5.99, paid: 5.99 } : line));
+
+  const economicsRows = data.economics.map((row) => {
+    const cell = row.lines.wick;
+    if (!cell || cell.source !== "ESTIMATE") return row;
+    return { ...row, lines: { ...row.lines, wick: { amount: 0.12, source: "ACTUAL" as const } } };
+  });
+
+  const known = new Set(data.decisions.map((item) => item.id));
+  const decisions = [
+    ...data.decisions.map((item) => {
+      const change = OLD_RESEARCH[item.id];
+      return change && item.decision === change.was ? { ...item, ...change.decisions } : item;
+    }),
+    ...NEW_DECISIONS.filter((item) => !known.has(item.id)),
+  ];
+
+  const questions = data.questions.map((item) => {
+    const change = OLD_QUESTIONS[item.id];
+    return change && item.question === change.was ? { ...item, ...change.patch } : item;
+  });
+
+  const experiments = data.experiments.map((item) => {
+    const change = OLD_EXPERIMENTS[item.id];
+    return change && item.name === change.was ? { ...item, ...change.patch } : item;
+  });
+
+  const blockers = data.blockers.map((item) =>
+    item.id === "bl5" && item.title === "Prices rest on estimates"
+      ? { ...item, detail: "Wax, oil, jars, and wicks are real costs now. Packaging, closures, and retail prices are still estimates." }
+      : item,
+  );
+
+  return { ...data, tasks, suppliers, acquisitions: withWaxLink, budget, economics: economicsRows, decisions, questions, experiments, blockers };
 }

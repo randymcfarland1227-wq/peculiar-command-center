@@ -35,7 +35,7 @@ function CostsPage() {
         title="Estimates, until they aren’t"
         lede="The contribution target is about $20–25 a candle. These numbers are planning figures. Change the source to Quote or Actual when a real number replaces the guess. About $4,000 a month of profit is roughly 160–200 candles at that margin."
       />
-      <Note>Regular is the 10 oz recycled jar and Large the 13.5 oz. Wax, fragrance, and vessel are from the October orders; retail and the rest are still estimates.</Note>
+      <Note>Regular is the 10 oz recycled jar and Large the 13.5 oz. Wax, fragrance, wick, and vessel are from the October orders; retail and the rest are still estimates.</Note>
 
       <section className="my-8">
         <SectionTitle title="Unit economics" />

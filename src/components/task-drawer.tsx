@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useEffect } from "react";
+import { HowList } from "@/components/step-track";
 import { DeleteButton, Field, SelectInput, TextInput, AreaInput, GhostButton, SolidButton } from "@/components/fields";
 import { PRIORITIES, STATUSES, WORKSTREAMS, WORKSTREAM_LABEL, LAUNCH_AREAS } from "@/lib/peculiar/types";
 import { usePeculiar } from "@/lib/peculiar/store";
@@ -115,6 +116,12 @@ export function TaskDrawer() {
                     <Field label={`${at + 1}. ${item.label}`}>
                       <TextInput value={item.value} placeholder={item.hint} onChange={(event) => updateStep(task.id, item.id, event.target.value)} />
                     </Field>
+                    {item.how?.length ? (
+                      <details className="mt-1">
+                        <summary className="flex h-11 cursor-pointer items-center text-xs tracking-widest text-olive">How to do this</summary>
+                        <HowList steps={item.how} />
+                      </details>
+                    ) : null}
                   </div>
                   <DeleteButton compact label={`Delete field ${item.label}`} onConfirm={() => removeStep(task.id, item.id)} />
                 </div>

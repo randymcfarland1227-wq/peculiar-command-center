@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { prettyDate } from "@/lib/peculiar/format";
 import { stepProgress, usePeculiar } from "@/lib/peculiar/store";
@@ -28,6 +29,7 @@ export function StepTrack({ task, index }: { task: Task; index?: number }) {
   const steps = task.steps ?? [];
   const nextIndex = progress.next ? steps.indexOf(progress.next) : -1;
   const done = task.status === "COMPLETE";
+  const [howOpen, setHowOpen] = useState<string | null>(null);
 
   return (
     <article
@@ -90,7 +92,21 @@ export function StepTrack({ task, index }: { task: Task; index?: number }) {
                   {filled ? <Check className="size-3" /> : at + 1}
                 </span>
                 <span className="text-xs tracking-widest text-ink">{item.label}</span>
+                {item.how?.length ? (
+                  <button
+                    type="button"
+                    aria-expanded={howOpen === item.id}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      setHowOpen(howOpen === item.id ? null : item.id);
+                    }}
+                    className="ml-auto -my-3 flex h-11 items-center px-2 text-xs tracking-widest text-olive underline underline-offset-4"
+                  >
+                    {howOpen === item.id ? "Hide" : "How"}
+                  </button>
+                ) : null}
               </label>
+              {howOpen === item.id && item.how ? <HowList steps={item.how} /> : null}
               <div className="mt-1 flex gap-1">
               <input
                 id={`${task.id}-${item.id}`}
@@ -121,5 +137,16 @@ export function StepTrackRow({ tasks, numbered }: { tasks: Task[]; numbered?: bo
         <StepTrack key={task.id} task={task} index={numbered ? at + 1 : undefined} />
       ))}
     </div>
+  );
+}
+
+/** The numbered how-to for one field. */
+export function HowList({ steps }: { steps: string[] }) {
+  return (
+    <ol className="mt-2 list-decimal space-y-1 border-l-2 border-olive bg-paper py-2 pl-7 pr-2 text-sm leading-relaxed text-ink">
+      {steps.map((line) => (
+        <li key={line}>{line}</li>
+      ))}
+    </ol>
   );
 }

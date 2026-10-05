@@ -101,6 +101,8 @@ export interface TaskStep {
   label: string;
   hint: string;
   value: string;
+  /** Plain how-to steps for errands, copied from guides.ts on every load. */
+  how?: string[];
 }
 
 export interface Task {
