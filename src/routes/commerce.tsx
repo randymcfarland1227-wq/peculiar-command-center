@@ -21,7 +21,7 @@ function CommercePage() {
         index="04"
         kicker="Commerce"
         title="Price is still a hypothesis"
-        lede="Small, Medium, and Large have planning ranges. Every cost behind them is an estimate until a supplier quote replaces it. The customer storefront is a separate site — this page tracks the work, it does not edit that site."
+        lede="Regular and Large have planning ranges. Every cost behind them is an estimate until a supplier quote replaces it. The customer storefront is a separate site — this page tracks the work, it does not edit that site."
       />
       <Note>Do not build the storefront here. The prototype stays its own project.</Note>
       <section className="my-8 grid gap-3 md:grid-cols-3">

@@ -99,6 +99,12 @@ export function TaskDrawer() {
             <Field label="Owner">
               <TextInput value={record.owner} onChange={(event) => patch({ owner: event.target.value })} />
             </Field>
+            <Field label="When">
+              <SelectInput value={record.afterLaunch ? "after" : "before"} onChange={(event) => patch({ afterLaunch: event.target.value === "after" })}>
+                <option value="before">Before launch</option>
+                <option value="after">After launch</option>
+              </SelectInput>
+            </Field>
           </div>
           {!draft && task?.steps?.length ? (
             <div className="grid gap-3 border border-line bg-sheet p-3">

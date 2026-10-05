@@ -21,6 +21,7 @@ export function TaskList({ tasks, empty }: { tasks: Task[]; empty?: string }) {
     const q = query.trim().toLowerCase();
     return tasks
       .filter((task) => {
+        if (task.afterLaunch) return false;
         if (scope === "active" && (task.priority === "LATER" || task.status === "COMPLETE")) return false;
         if (priority !== "ALL" && task.priority !== priority) return false;
         if (status !== "ALL" && task.status !== status) return false;

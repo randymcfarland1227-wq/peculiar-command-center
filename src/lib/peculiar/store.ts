@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { productLabTracks, seedData } from "./seed";
+import { applyUpdates } from "./updates";
 import type {
   Blocker,
   BudgetLine,
@@ -136,7 +137,13 @@ const dataKeys: (keyof PeculiarData)[] = [
   "blockers",
   "acquisitions",
   "removedAcquisitions",
+  "appliedUpdates",
 ];
+
+/** Built-in data with every one-time update already applied. */
+function freshData(): PeculiarData {
+  return applyUpdates(seedData());
+}
 
 /** localStorage key for the studio data (shared with Life Hub's embedded copy). */
 export const PECULIAR_STORAGE_KEY = "peculiar-command-center-v1";
@@ -144,7 +151,7 @@ export const PECULIAR_STORAGE_KEY = "peculiar-command-center-v1";
 export const usePeculiar = create<Store>()(
   persist(
     (set) => ({
-      ...seedData(),
+      ...freshData(),
       openTaskId: null,
       draft: null,
       updateTask: (id, patch) =>
@@ -276,7 +283,7 @@ export const usePeculiar = create<Store>()(
           acquisitions: s.acquisitions.filter((item) => item.id !== id),
           removedAcquisitions: s.removedAcquisitions.includes(id) ? s.removedAcquisitions : [...s.removedAcquisitions, id],
         })),
-      reset: () => set({ ...seedData(), openTaskId: null, draft: null }),
+      reset: () => set({ ...freshData(), openTaskId: null, draft: null }),
     }),
     {
       name: PECULIAR_STORAGE_KEY,
@@ -284,14 +291,17 @@ export const usePeculiar = create<Store>()(
       skipHydration: true,
       merge: (persisted, current) => {
         const saved = (persisted ?? {}) as Partial<Store>;
-        return {
+        const merged = {
           ...current,
           ...saved,
           acquisitions: mergeAcquisitions(saved.acquisitions, current.acquisitions, saved.removedAcquisitions ?? []),
           removedAcquisitions: saved.removedAcquisitions ?? [],
           tasks: mergeProductLabTracks(saved.tasks, current.tasks),
           scents: mergeScents(saved.scents, current.scents),
+          // Saved data from before updates were tracked starts with none applied.
+          appliedUpdates: saved.appliedUpdates ?? [],
         };
+        return { ...merged, ...applyUpdates(merged) };
       },
       partialize: (state) => {
         const data: Partial<PeculiarData> = {};
@@ -392,6 +402,18 @@ function mergeScents(saved: Scent[] | undefined, fresh: Scent[]): Scent[] {
   });
 }
 
+/** Saves straight after loading when a one-time update ran, so other tabs and Life Hub see it. */
+export function saveAppliedUpdates() {
+  try {
+    const raw = localStorage.getItem(PECULIAR_STORAGE_KEY);
+    if (!raw) return;
+    const saved: string[] = JSON.parse(raw)?.state?.appliedUpdates ?? [];
+    if (usePeculiar.getState().appliedUpdates.some((id) => !saved.includes(id))) usePeculiar.setState({});
+  } catch {
+    // Storage unavailable: the updates simply run again on the next load.
+  }
+}
+
 export function variableCost(row: Store["economics"][number]) {
   return Object.values(row.lines).reduce((sum, cell) => sum + (Number(cell?.amount) || 0), 0);
 }
@@ -404,7 +426,9 @@ export function stepProgress(task: Task) {
   return { done, total: steps.length, next };
 }
 
-export function countComplete(tasks: Task[]) {
+/** Done out of total, leaving out tasks parked until after launch. */
+export function countComplete(all: Task[]) {
+  const tasks = all.filter((task) => !task.afterLaunch);
   const total = tasks.length;
   const done = tasks.filter((task) => task.status === "COMPLETE").length;
   return { done, total, percent: total ? Math.round((done / total) * 100) : 0 };
@@ -413,7 +437,7 @@ export function countComplete(tasks: Task[]) {
 export function nextActions(tasks: Task[], limit = 5) {
   const rank = { NOW: 0, NEXT: 1, LATER: 2 };
   return tasks
-    .filter((task) => task.status !== "COMPLETE" && task.priority !== "LATER")
+    .filter((task) => task.status !== "COMPLETE" && task.priority !== "LATER" && !task.afterLaunch)
     .slice()
     .sort((a, b) => {
       const byPriority = rank[a.priority] - rank[b.priority];

@@ -24,7 +24,8 @@ function ProductLabPage() {
   const tasks = allTasks.filter((task) => task.workstream === "product-lab");
   const experiments = allExperiments.filter((item) => item.workstream === "product-lab");
   const decisions = allDecisions.filter((item) => item.workstreams.includes("product-lab"));
-  const tracks = tasks.filter((task) => task.steps?.length);
+  const active = tasks.filter((task) => !task.afterLaunch);
+  const tracks = active.filter((task) => task.steps?.length && task.section !== "Safety");
   const [openSlot, setOpenSlot] = useState("01");
 
   return (
@@ -33,7 +34,7 @@ function ProductLabPage() {
         index="02"
         kicker="Product Lab"
         title="Wax, scent, wick, vessel"
-        lede="Launch depends on a tested soy-coconut wax, five signature scents, a diameter-based wick system, and a closure that survives shipping. Reclaimed glass has been sourced for about three months. It still needs to be measured."
+        lede="Launch depends on the wax, six signature scents, a diameter-based wick system, and a closure that survives shipping. Wax, oils, and recycled jars are bought. Reclaimed glass still needs to be measured."
       />
 
       <section className="mb-10">
@@ -46,7 +47,7 @@ function ProductLabPage() {
 
       <section className="mb-10">
         <SectionTitle title="Safety" />
-        <TaskList tasks={tasks.filter((task) => !task.steps?.length)} />
+        <TaskList tasks={active.filter((task) => task.section === "Safety" || !task.steps?.length)} />
       </section>
 
       <section className="mb-12">

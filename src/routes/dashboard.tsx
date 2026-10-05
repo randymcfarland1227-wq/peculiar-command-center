@@ -3,7 +3,7 @@ import { Check } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { countComplete, stepProgress, usePeculiar } from "@/lib/peculiar/store";
-import type { Decision, Experiment, Task } from "@/lib/peculiar/types";
+import { WORKSTREAM_LABEL, type Decision, type Experiment, type Task } from "@/lib/peculiar/types";
 import { DecisionChip, StatusChip } from "@/components/status-chip";
 import { DeleteButton } from "@/components/fields";
 
@@ -26,6 +26,7 @@ function Dashboard() {
   const removeScent = usePeculiar((s) => s.removeScent);
   const removeSupplier = usePeculiar((s) => s.removeSupplier);
 
+  const parked = tasks.filter((task) => task.afterLaunch);
   const company = tasks.filter((task) => task.workstream === "company");
   const research = tasks.filter((task) => task.workstream === "research");
   const lab = tasks.filter((task) => task.workstream === "product-lab");
@@ -81,6 +82,7 @@ function Dashboard() {
       </header>
 
       {view === "dashboard" ? (
+        <>
         <div className="grid items-start gap-6 lg:grid-cols-3">
           <Column title="Operate" count={operate}>
             <TaskBlock title="Company" href="/company" tasks={company} />
@@ -106,6 +108,8 @@ function Dashboard() {
             </article>
           </Column>
         </div>
+        {parked.length ? <AfterLaunch tasks={parked} /> : null}
+        </>
       ) : (
         <div className="grid items-start gap-6 lg:grid-cols-3">
           <DataColumn title="Operate">
@@ -247,7 +251,8 @@ function Column({
   );
 }
 
-function TaskBlock({ title, href, tasks }: { title: string; href: string; tasks: Task[] }) {
+function TaskBlock({ title, href, tasks: all }: { title: string; href: string; tasks: Task[] }) {
+  const tasks = all.filter((task) => !task.afterLaunch);
   const count = countComplete(tasks);
   const stepped = tasks.filter((task) => task.steps?.length);
   const plain = tasks.filter((task) => !task.steps?.length);
@@ -275,6 +280,46 @@ function TaskBlock({ title, href, tasks }: { title: string; href: string; tasks:
         </div>
       ))}
     </article>
+  );
+}
+
+/** Tasks parked until after launch: closed by default, out of every count above. */
+function AfterLaunch({ tasks }: { tasks: Task[] }) {
+  const updateTask = usePeculiar((s) => s.updateTask);
+  const removeTask = usePeculiar((s) => s.removeTask);
+  const groups = [...new Set(tasks.map((task) => task.workstream))];
+  return (
+    <details className="mt-8 border border-line bg-sheet">
+      <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-4 py-3">
+        <span className="font-serif text-xl">After launch</span>
+        <span className="text-xs tracking-widest text-muted">{tasks.length} parked</span>
+      </summary>
+      <div className="border-t border-line px-4 pb-4">
+        <p className="mt-3 text-sm text-muted">Kept for later and left out of every count. Bring one back when it matters.</p>
+        {groups.map((workstream) => (
+          <div key={workstream} className="mt-4">
+            <h3 className="text-xs tracking-widest text-olive">{WORKSTREAM_LABEL[workstream]}</h3>
+            <ul>
+              {tasks
+                .filter((task) => task.workstream === workstream)
+                .map((task) => (
+                  <li key={task.id} className="flex items-center gap-2 border-t border-line">
+                    <span className="flex-1 py-2 text-sm">{task.title}</span>
+                    <button
+                      type="button"
+                      onClick={() => updateTask(task.id, { afterLaunch: false })}
+                      className="h-11 shrink-0 border border-line bg-paper px-3 text-sm"
+                    >
+                      Bring back
+                    </button>
+                    <DeleteButton compact label={`Delete ${task.title}`} onConfirm={() => removeTask(task.id)} />
+                  </li>
+                ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </details>
   );
 }
 

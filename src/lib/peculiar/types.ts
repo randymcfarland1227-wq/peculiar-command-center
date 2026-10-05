@@ -48,7 +48,7 @@ export type LaunchArea = (typeof LAUNCH_AREAS)[number];
 export const COST_SOURCES = ["ESTIMATE", "QUOTE", "ACTUAL"] as const;
 export type CostSource = (typeof COST_SOURCES)[number];
 
-export const SIZES = ["Small", "Medium", "Large"] as const;
+export const SIZES = ["Regular", "Large"] as const;
 export type Size = (typeof SIZES)[number];
 
 export const COST_FIELDS = [
@@ -123,6 +123,8 @@ export interface Task {
   launchArea: LaunchArea | "";
   /** Ordered fields worked left to right. Present on the Product Lab component tasks. */
   steps?: TaskStep[];
+  /** Parked until after launch: kept, but out of every count and active list. */
+  afterLaunch?: boolean;
 }
 
 export interface Decision {
@@ -338,4 +340,6 @@ export interface PeculiarData {
   acquisitions: Acquisition[];
   /** Ids of built-in acquisitions the user deleted, so a reload doesn't restore them. */
   removedAcquisitions: string[];
+  /** One-time updates already applied to saved data, so a reload never re-applies them. */
+  appliedUpdates: string[];
 }

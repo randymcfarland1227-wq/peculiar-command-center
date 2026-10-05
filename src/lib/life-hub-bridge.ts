@@ -71,7 +71,7 @@ export function setCandleStarred(id: string, starred: boolean) {
 }
 
 function isOpenTask(task: Task) {
-  return task.status !== "COMPLETE";
+  return task.status !== "COMPLETE" && !task.afterLaunch;
 }
 
 function taskStatusLabel(task: Task) {

@@ -33,7 +33,7 @@ function InventoryPage() {
         index="10"
         kicker="Inventory"
         title="Measure the glass you already have"
-        lede="Shoppers see Small, Medium, or Large, and Clear, Color, or Surprise Me. The lab sees diameter and profile. The rows below are examples until you replace them with measured jars."
+        lede="Shoppers see Regular or Large, and Clear, Color, or Surprise Me. The lab sees diameter and profile. The rows below are examples until you replace them with measured jars."
       />
       <Note>Profiles in use: S-Narrow, S-Standard, S-Wide, M-Narrow, M-Standard, M-Wide, L-Standard, L-Wide.</Note>
       <div className="my-4 flex flex-wrap gap-2">
@@ -123,7 +123,7 @@ function InventoryPage() {
             addVessel({
               id: uid("vs"),
               vesselId: "",
-              sizeClass: "Medium",
+              sizeClass: "Regular",
               diameter: "",
               profile: "",
               color: "",

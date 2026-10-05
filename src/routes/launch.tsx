@@ -15,7 +15,7 @@ function LaunchPage() {
   const updateSku = usePeculiar((s) => s.updateSku);
 
   const gates = LAUNCH_AREAS.map((area) => {
-    const items = tasks.filter((task) => task.launchArea === area);
+    const items = tasks.filter((task) => task.launchArea === area && !task.afterLaunch);
     const done = items.filter((task) => task.status === "COMPLETE").length;
     return { area, done, total: items.length };
   });

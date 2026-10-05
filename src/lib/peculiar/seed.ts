@@ -181,6 +181,7 @@ export function seedData(): PeculiarData {
     blockers: blockers(),
     acquisitions: acquisitions(),
     removedAcquisitions: [],
+    appliedUpdates: [],
   };
 }
 
@@ -212,186 +213,295 @@ function acquisitions(): Acquisition[] {
   ];
 }
 
-function tasks(): Task[] {
+/**
+ * Jobs that used to be several tasks, each now one task whose fields are its parts.
+ * Step ids are the ids of the tasks they replaced, so saved progress carries over.
+ */
+export function combinedTasks(): Task[] {
   return [
-    t("c1", "Form LLC / EIN / business banking structure", "company", "NOT STARTED", "NOW", "Legal", {
+    t("co-setup", "Business setup", "company", "NOT STARTED", "NOW", "Legal", {
       due: "2026-10-15",
       notes: "File the LLC, then EIN, then business checking. A credit card is a later decision, not part of this action.",
       launchArea: "Admin",
+      steps: [
+        step("c1", "LLC", "Filed with Maryland, and when"),
+        step("c6", "EIN", "Number on file"),
+        step("c7", "Business checking", "Bank, and when it opened"),
+      ],
     }),
-    t("c2", "Confirm business name availability", "company", "NOT STARTED", "NEXT", "Legal"),
-    t("c3", "Confirm domain", "company", "NOT STARTED", "NEXT", "Legal"),
-    t("c4", "Confirm social handles", "company", "NOT STARTED", "NEXT", "Legal"),
-    t("c5", "Review trademark availability", "company", "NOT STARTED", "LATER", "Legal"),
-    t("c6", "Get EIN", "company", "NOT STARTED", "NEXT", "Legal", { dependencies: "LLC filed" }),
-    t("c7", "Open business checking account", "company", "NOT STARTED", "NEXT", "Finance", { dependencies: "EIN" }),
-    t("c8", "Evaluate business credit card options", "company", "NOT STARTED", "LATER", "Finance", {
-      notes: "Financing strategy is unresolved. Do not treat credit as startup cash.",
+    t("co-name", "Name check", "company", "IN PROGRESS", "NEXT", "Legal", {
+      notes: "Peculiar Pumpkin sells Halloween candles and soaps under a similar name. Check USPTO before spending on labels.",
+      steps: [
+        step("c3", "Domain", "Owned"),
+        step("c4", "Instagram", "Handle secured"),
+        step("c5", "Trademark search", "Free USPTO search in Class 4 first. Filing ($350) can wait"),
+      ],
     }),
-    t("c9", "Decide bootstrap budget", "company", "NOT STARTED", "NEXT", "Finance"),
-    t("c10", "Register for Maryland sales tax", "company", "NOT STARTED", "LATER", "Legal", { launchArea: "Admin" }),
-    t("c11", "Confirm local or home-business requirements", "company", "NOT STARTED", "NEXT", "Legal"),
-    t("c12", "Get product liability insurance quotes", "company", "WAITING", "NEXT", "Insurance", {
+    t("co-legal", "Legal and tax", "company", "NOT STARTED", "NEXT", "Legal", {
+      launchArea: "Admin",
+      steps: [
+        step("c10", "Maryland sales tax", "Registered, and the account number"),
+        step("c11", "Home-business rules", "What the county requires"),
+      ],
+    }),
+    t("co-insurance", "Insurance", "company", "WAITING", "NEXT", "Insurance", {
       notes: "Need quotes before the first sale.",
       launchArea: "Admin",
+      steps: [
+        step("c12", "Product liability", "Carrier and yearly cost"),
+        step("c13", "General coverage", "Needed or not"),
+        step("s16", "Covers the product", "Policy matches the candles as made and sold"),
+      ],
     }),
-    t("c13", "Confirm general business insurance needs", "company", "NOT STARTED", "LATER", "Insurance"),
-    t("c14", "Set up bookkeeping structure", "company", "NOT STARTED", "LATER", "Finance"),
-    t("c15", "Create business expense categories", "company", "NOT STARTED", "LATER", "Finance"),
-    t("c16", "Create tax reserve process", "company", "NOT STARTED", "LATER", "Finance"),
+    t("co-books", "Bookkeeping", "company", "NOT STARTED", "LATER", "Finance", {
+      steps: [
+        step("c14", "Bookkeeping", "Tool or spreadsheet"),
+        step("c15", "Expense categories", "The list"),
+        step("c16", "Tax reserve", "Share of each sale set aside"),
+      ],
+    }),
 
-    ...productLabTracks(),
-
-    t("s1", "Gather applicable candle safety standards", "product-lab", "NOT STARTED", "NEXT", "Safety", { launchArea: "Safety" }),
-    t("s2", "Gather supplier SDS, IFRA, and usage documents", "product-lab", "NOT STARTED", "NEXT", "Safety", { launchArea: "Safety" }),
-    t("s3", "Build burn-test template", "product-lab", "IN PROGRESS", "NEXT", "Safety", {
+    t("sa-docs", "Safety documents", "product-lab", "NOT STARTED", "NEXT", "Safety", {
+      launchArea: "Safety",
+      steps: [
+        step("s1", "Safety standards", "Which candle fire-safety standards apply"),
+        step("s2", "SDS and IFRA", "On file for every oil and the wax"),
+      ],
+    }),
+    t("sa-burn", "Burn-test setup", "product-lab", "IN PROGRESS", "NEXT", "Safety", {
       notes: "Working record is the Tests page. Pass/fail criteria are still open.",
       launchArea: "Safety",
+      steps: [
+        step("s3", "Burn-test template", "Where the record lives"),
+        step("s5", "Test records", "Wax, wick, and fragrance records"),
+        step("s6", "Pass/fail rules", "What a passing burn looks like"),
+      ],
     }),
-    t("s4", "Create vessel test matrix", "product-lab", "NOT STARTED", "NEXT", "Safety"),
-    t("s5", "Create wax, wick, and fragrance test records", "product-lab", "IN PROGRESS", "NEXT", "Safety"),
-    t("s6", "Define pass/fail burn criteria", "product-lab", "NOT STARTED", "NEXT", "Safety", { launchArea: "Safety" }),
-    t("s7", "Define minimum cure age before testing", "product-lab", "NOT STARTED", "NEXT", "Safety"),
-    t("s8", "Define minimum cure age before sale", "product-lab", "NOT STARTED", "NEXT", "Safety", { launchArea: "Product" }),
-    t("s9", "Create batch code system", "product-lab", "NOT STARTED", "LATER", "Safety"),
-    t("s10", "Create QC checklist", "product-lab", "NOT STARTED", "LATER", "Safety"),
-    t("s11", "Create finished-product release checklist", "product-lab", "NOT STARTED", "LATER", "Safety"),
-    t("s12", "Design fire-safety label", "product-lab", "NOT STARTED", "NEXT", "Safety", { launchArea: "Safety" }),
-    t("s13", "Write candle-care instructions", "product-lab", "NOT STARTED", "NEXT", "Safety"),
-    t("s14", "Create incident and complaint log", "product-lab", "NOT STARTED", "LATER", "Safety"),
-    t("s15", "Create stop-sale and recall procedure", "product-lab", "NOT STARTED", "LATER", "Safety"),
-    t("s16", "Confirm insurance requirements against the product", "product-lab", "NOT STARTED", "NEXT", "Safety"),
+    t("sa-release", "QC and release", "product-lab", "NOT STARTED", "NEXT", "Safety", {
+      steps: [
+        step("s9", "Batch codes", "The format"),
+        step("s10", "QC checklist", "What every candle is checked for"),
+        step("s11", "Release checklist", "What clears a batch for sale"),
+      ],
+    }),
 
-    t("b1", "Refine primary Peculiar logo", "brand", "NOT STARTED", "NEXT", "Logo", {
+    t("br-logo", "Logo", "brand", "NOT STARTED", "NEXT", "Logo", {
       notes: "Refine the existing mark. Do not start over.",
+      steps: [
+        step("b1", "Primary logo", "Refined mark"),
+        step("b2", "Wordmark", "Simplified version"),
+        step("b3", "Small icon", "For tiny sizes"),
+      ],
     }),
-    t("b2", "Create simplified wordmark", "brand", "NOT STARTED", "NEXT", "Logo"),
-    t("b3", "Create small icon", "brand", "NOT STARTED", "NEXT", "Logo"),
-    t("b4", "Create maker’s mark", "brand", "NOT STARTED", "LATER", "Logo"),
-    t("b5", "Finalize brand color tokens", "brand", "PLANNING", "NEXT", "Color", {
-      notes: "Direction is muted sage, cream, deep forest, olive, and earth. Tokens are not locked.",
+    t("br-system", "Brand system", "brand", "PLANNING", "NEXT", "Color", {
+      notes: "Direction is muted sage, cream, deep forest, olive, and earth. Tokens are not locked.\nExpressive serif for display. Clean sans for utility.",
+      steps: [
+        step("b5", "Colors", "Locked color tokens"),
+        step("b6", "Typography", "Display and utility fonts"),
+        step("b7", "Scent numbers", "How 01–06 appear"),
+      ],
     }),
-    t("b6", "Finalize typography system", "brand", "PLANNING", "NEXT", "Typography", {
-      notes: "Expressive serif for display. Clean sans for utility.",
+    t("br-labels", "Labels", "brand", "NOT STARTED", "NEXT", "Labels", {
+      launchArea: "Safety",
+      steps: [
+        step("b8", "Front label", "Design"),
+        step("b9", "Bottom / safety label", "Design, with the fire-safety warning"),
+        step("b10", "Reclaimed identifier", "How a reclaimed vessel is marked"),
+        step("b11", "Recycled label", "Recycled collection label"),
+      ],
     }),
-    t("b7", "Create scent-number system", "brand", "NOT STARTED", "NEXT", "Labels"),
-    t("b8", "Design front product label", "brand", "NOT STARTED", "NEXT", "Labels"),
-    t("b9", "Design bottom / safety label", "brand", "NOT STARTED", "NEXT", "Labels"),
-    t("b10", "Design reclaimed vessel identifier", "brand", "NOT STARTED", "NEXT", "Labels"),
-    t("b11", "Design recycled collection label", "brand", "NOT STARTED", "NEXT", "Labels"),
-    t("b12", "Design cork and beeswax closure treatment", "brand", "NOT STARTED", "NEXT", "Packaging"),
-    t("b13", "Design candle-care card", "brand", "NOT STARTED", "LATER", "Packaging"),
-    t("b14", "Design thank-you insert", "brand", "NOT STARTED", "LATER", "Packaging"),
-    t("b15", "Design packaging sticker and tape system", "brand", "NOT STARTED", "LATER", "Packaging"),
-    t("b16", "Design shipping box treatment", "brand", "NOT STARTED", "LATER", "Packaging"),
+    t("br-pack", "Packaging design", "brand", "NOT STARTED", "NEXT", "Packaging", {
+      steps: [
+        step("b12", "Closure look", "Cork and beeswax treatment"),
+        step("b13", "Care card", "Candle-care instructions, designed"),
+      ],
+    }),
     t("b17", "Create photo styling guide", "brand", "NOT STARTED", "NEXT", "Photography"),
-    t("b18", "Create social templates", "brand", "NOT STARTED", "LATER", "Photography"),
-    t("b19", "Create market and pop-up signage", "brand", "NOT STARTED", "LATER", "Photography"),
-    t("b20", "Create return-program card", "brand", "NOT STARTED", "LATER", "Packaging"),
 
-    t("m1", "Replace estimated unit costs with supplier costs", "commerce", "NOT STARTED", "NEXT", "Pricing"),
-    t("m2", "Calculate landed wax cost", "commerce", "NOT STARTED", "NEXT", "Pricing"),
-    t("m3", "Calculate fragrance cost per candle", "commerce", "NOT STARTED", "NEXT", "Pricing"),
-    t("m4", "Calculate wick cost", "commerce", "NOT STARTED", "NEXT", "Pricing"),
-    t("m5", "Calculate vessel cost", "commerce", "NOT STARTED", "NEXT", "Pricing"),
-    t("m6", "Calculate reclaimed cleaning and prep labor", "commerce", "NOT STARTED", "NEXT", "Pricing"),
-    t("m7", "Calculate closure cost", "commerce", "NOT STARTED", "NEXT", "Pricing"),
-    t("m8", "Calculate label cost", "commerce", "NOT STARTED", "NEXT", "Pricing"),
-    t("m9", "Calculate packaging cost", "commerce", "NOT STARTED", "NEXT", "Pricing"),
-    t("m10", "Calculate shipping-material cost", "commerce", "NOT STARTED", "NEXT", "Pricing"),
-    t("m11", "Calculate platform and payment fees", "commerce", "NOT STARTED", "NEXT", "Pricing"),
-    t("m12", "Assign founder labor rate", "commerce", "NOT STARTED", "NEXT", "Pricing"),
-    t("m13", "Set defect and breakage allowance from real loss", "commerce", "NOT STARTED", "LATER", "Pricing"),
-    t("m14", "Calculate true cost by size", "commerce", "NOT STARTED", "NEXT", "Pricing"),
-    t("m15", "Finalize retail price by size", "commerce", "NOT STARTED", "LATER", "Pricing", { launchArea: "Product" }),
-    t("m16", "Calculate contribution margin by product", "commerce", "NOT STARTED", "NEXT", "Pricing"),
-    t("m17", "Calculate average order value targets", "commerce", "NOT STARTED", "LATER", "Pricing"),
-    t("m18", "Calculate monthly fixed costs", "commerce", "NOT STARTED", "LATER", "Pricing"),
-    t("m19", "Calculate break-even units and orders", "commerce", "NOT STARTED", "LATER", "Pricing"),
-    t("m20", "Finalize startup budget", "commerce", "NOT STARTED", "NEXT", "Budget"),
-    t("m21", "Determine launch inventory budget", "commerce", "NOT STARTED", "NEXT", "Budget", { launchArea: "Inventory" }),
-    t("m22", "Determine working-capital reserve", "commerce", "NOT STARTED", "LATER", "Budget"),
-    t("m23", "Decide how much credit is safe to use", "commerce", "NOT STARTED", "LATER", "Budget"),
-
-    t("sf1", "Build the first storefront prototype", "commerce", "NOT STARTED", "NOW", "Storefront", {
+    t("cm-costs", "Real costs", "commerce", "NOT STARTED", "NEXT", "Pricing", {
+      notes: "One field per cost line. The Costs page holds the per-size numbers.",
+      steps: [
+        step("m2", "Wax", "Cost per ounce, landed"),
+        step("m3", "Fragrance", "Cost per ounce of oil"),
+        step("m4", "Wick", "Per candle"),
+        step("m5", "Vessel", "Per jar, landed"),
+        step("m6", "Reclaimed prep labor", "Cleaning and prep per jar"),
+        step("m7", "Closure", "Per candle"),
+        step("m8", "Label", "Per candle"),
+        step("m9", "Packaging", "Per order"),
+        step("m10", "Shipping materials", "Per order"),
+        step("m11", "Payment fees", "Per sale"),
+        step("m12", "Founder labor rate", "Per hour"),
+        step("m1", "Costs page updated", "Estimates replaced with these numbers"),
+      ],
+    }),
+    t("cm-pricing", "Pricing", "commerce", "NOT STARTED", "NEXT", "Pricing", {
+      launchArea: "Product",
+      steps: [
+        step("m14", "True cost by size", "Regular and Large"),
+        step("m16", "Margin by size", "Regular and Large"),
+        step("m15", "Retail price by size", "Regular and Large"),
+      ],
+    }),
+    t("cm-budget", "Budget", "commerce", "NOT STARTED", "NEXT", "Budget", {
+      launchArea: "Inventory",
+      steps: [
+        step("c9", "Bootstrap budget", "Total you'll put in"),
+        step("m20", "Startup budget", "Split by category"),
+        step("m21", "Launch inventory budget", "For the first batch"),
+      ],
+    }),
+    t("cm-store", "Storefront", "commerce", "NOT STARTED", "NOW", "Storefront", {
       due: "2026-10-20",
       notes: "The customer storefront is a separate site. Track it here. Do not build it inside the command center.",
       launchArea: "Storefront",
+      steps: [
+        step("sf1", "Prototype", "First working version"),
+        step("sf2", "Homepage", "Built"),
+        step("sf3", "Collections", "Reclaimed and Recycled"),
+        step("sf4", "Scent pages", "Library and one page per scent"),
+        step("sf5", "Reclaimed builder", "Size, scent, Clear / Color / Surprise Me"),
+        step("sf7", "About, care, FAQ", "Built"),
+        step("sf9", "Cart and mobile", "Works on a phone"),
+        step("sf11", "Analytics and policies", "In place"),
+        step("sf12", "Checkout", "Stripe, Shopify Starter, or another"),
+      ],
     }),
-    t("sf2", "Build storefront homepage", "commerce", "NOT STARTED", "LATER", "Storefront", { launchArea: "Storefront" }),
-    t("sf3", "Build Reclaimed and Recycled collections", "commerce", "NOT STARTED", "LATER", "Storefront", { launchArea: "Storefront" }),
-    t("sf4", "Build scent library and scent pages", "commerce", "NOT STARTED", "LATER", "Storefront", { launchArea: "Storefront" }),
-    t("sf5", "Build Reclaimed builder: size, scent, Clear / Color / Surprise Me", "commerce", "NOT STARTED", "LATER", "Storefront", {
-      launchArea: "Storefront",
+    t("cm-waitlist", "Waitlist", "commerce", "NOT STARTED", "NEXT", "Storefront", {
+      launchArea: "Content",
+      steps: [
+        step("sf10", "Signup form", "On the storefront"),
+        step("n9", "Signup copy", "What the signup says"),
+        step("l10", "Live", "Open and collecting emails"),
+      ],
     }),
-    t("sf6", "Build the “what might arrive” gallery", "commerce", "NOT STARTED", "LATER", "Storefront"),
-    t("sf7", "Build Our Circle, About, care, safety, and FAQ", "commerce", "NOT STARTED", "LATER", "Storefront"),
-    t("sf8", "Build return-program framework", "commerce", "NOT STARTED", "LATER", "Storefront"),
-    t("sf9", "Build cart behavior and mobile layouts", "commerce", "NOT STARTED", "LATER", "Storefront"),
-    t("sf10", "Add email and waitlist capture", "commerce", "NOT STARTED", "NEXT", "Storefront", { launchArea: "Content" }),
-    t("sf11", "Add analytics and policy placeholders", "commerce", "NOT STARTED", "LATER", "Storefront"),
-    t("sf12", "Connect commerce backend when ready", "commerce", "NOT STARTED", "LATER", "Storefront"),
-
-    t("k1", "Order one-candle shipping box samples", "commerce", "NOT STARTED", "NEXT", "Packaging", {
+    t("cm-boxes", "Shipping boxes", "commerce", "NOT STARTED", "NEXT", "Packaging", {
       relatedSupplier: "sup-pack",
       launchArea: "Packaging",
+      steps: [
+        step("k1", "One-candle box", "Size and source"),
+        step("k2", "Multi-candle box", "Size and source"),
+        step("k4", "Padding and inserts", "What goes in the box"),
+        step("k3", "Odd-shape protection", "How reclaimed shapes ride safely"),
+        step("k5", "Drop test", "Result"),
+        step("k6", "Packed weights", "Weight and dimensions per box"),
+      ],
     }),
-    t("k2", "Order multi-candle box samples", "commerce", "NOT STARTED", "NEXT", "Packaging", { launchArea: "Packaging" }),
-    t("k3", "Test protection for variable reclaimed shapes", "commerce", "NOT STARTED", "NEXT", "Packaging"),
-    t("k4", "Decide padding, tape, and inserts", "commerce", "NOT STARTED", "LATER", "Packaging"),
-    t("k5", "Test drop resistance and breakage", "commerce", "NOT STARTED", "LATER", "Packaging"),
-    t("k6", "Determine packed weights and dimensions", "commerce", "NOT STARTED", "LATER", "Packaging"),
-    t("k7", "Compare carriers and estimate zone costs", "commerce", "NOT STARTED", "LATER", "Packaging", { relatedSupplier: "sup-ship" }),
-    t("k8", "Decide whether the customer pays shipping", "commerce", "NOT STARTED", "LATER", "Packaging"),
-    t("k9", "Develop hot-weather shipping policy", "commerce", "NOT STARTED", "LATER", "Packaging"),
-    t("k10", "Develop damaged-order process", "commerce", "NOT STARTED", "LATER", "Packaging"),
+    t("cm-shipping", "Shipping policy", "commerce", "NOT STARTED", "NEXT", "Packaging", {
+      relatedSupplier: "sup-ship",
+      steps: [
+        step("k7", "Carrier", "And typical cost by zone"),
+        step("k8", "Who pays shipping", "Flat rate, free over a threshold, or other"),
+        step("k9", "Hot weather", "What changes in summer"),
+        step("k10", "Damaged orders", "What happens when one breaks"),
+      ],
+    }),
 
-    t("n1", "Photograph current reclaimed vessels", "launch", "NOT STARTED", "NEXT", "Content", { launchArea: "Content" }),
-    t("n2", "Photograph before-and-after transformations", "launch", "NOT STARTED", "NEXT", "Content", { launchArea: "Content" }),
-    t("n3", "Film sourcing, cleaning, scent work, and pours", "launch", "NOT STARTED", "LATER", "Content"),
-    t("n4", "Film curing, QC, and mystery reveals", "launch", "NOT STARTED", "LATER", "Content"),
-    t("n5", "Create circularity explainer", "launch", "NOT STARTED", "NEXT", "Content", { launchArea: "Content" }),
-    t("n6", "Create founder build-in-public content", "launch", "NOT STARTED", "NEXT", "Content"),
-    t("n7", "Build launch content bank", "launch", "NOT STARTED", "LATER", "Content"),
-    t("n8", "Create launch-week posting schedule", "launch", "NOT STARTED", "LATER", "Content"),
-    t("n9", "Create email signup content", "launch", "NOT STARTED", "NEXT", "Content"),
-    t("n10", "Create initial product photography", "launch", "NOT STARTED", "LATER", "Content", { launchArea: "Content" }),
-
-    t("v1", "Interview target customers", "launch", "NOT STARTED", "NEXT", "Validation", {
+    t("la-content", "Photos and content", "launch", "NOT STARTED", "NEXT", "Content", {
+      launchArea: "Content",
+      steps: [
+        step("n1", "Vessel photos", "Current reclaimed stock"),
+        step("n2", "Before and afters", "Transformations"),
+        step("n10", "Product photos", "Finished candles"),
+        step("n5", "Circularity explainer", "Post or page"),
+        step("n6", "Process posts", "Hands-only, no face"),
+      ],
+    }),
+    t("la-interviews", "Customer interviews", "launch", "NOT STARTED", "NEXT", "Validation", {
+      notes: "One round of interviews. Each field is a question to ask, answered with what people said.",
       relatedExperiment: "exp-mystery",
       launchArea: "Customer Validation",
+      steps: [
+        step("v1", "Interviews done", "Who, and how many"),
+        step("v2", "Price", "Reaction to Regular and Large prices"),
+        step("v3", "Mystery vessel", "Do they want it"),
+        step("v4", "Clear / Color / Surprise Me", "Enough choice or not"),
+        step("v6", "Scent concepts", "Which names and stories land"),
+        step("v7", "Buying scent online", "Would they, without smelling it"),
+        step("v8", "Gifting", "Would they give one"),
+        step("v9", "Sustainability", "Reason to buy, or reason to feel good"),
+        step("v11", "Objections", "And how the copy changes"),
+      ],
     }),
-    t("v2", "Validate Small, Medium, and Large prices", "launch", "NOT STARTED", "NEXT", "Validation", { launchArea: "Customer Validation" }),
-    t("v3", "Test mystery-vessel appeal", "launch", "NOT STARTED", "NEXT", "Validation", { relatedExperiment: "exp-mystery" }),
-    t("v4", "Test whether Clear / Color / Surprise Me is enough", "launch", "NOT STARTED", "NEXT", "Validation", {
-      relatedExperiment: "exp-mystery",
+    t("la-batch", "Launch batch", "launch", "NOT STARTED", "LATER", "Readiness", {
+      launchArea: "Inventory",
+      steps: [
+        step("l7", "First sellable candles", "Poured, cured, and QC'd"),
+        step("l8", "Test and photo units", "Made"),
+        step("l9", "Replacement reserve", "How many held back"),
+      ],
     }),
-    t("v5", "Test reaction to the vessel gallery", "launch", "NOT STARTED", "LATER", "Validation"),
-    t("v6", "Test scent concepts before full production", "launch", "NOT STARTED", "NEXT", "Validation", { launchArea: "Customer Validation" }),
-    t("v7", "Test willingness to buy scent online", "launch", "NOT STARTED", "LATER", "Validation"),
-    t("v8", "Test gifting appeal", "launch", "NOT STARTED", "LATER", "Validation"),
-    t("v9", "Test whether sustainability leads or supports", "launch", "NOT STARTED", "NEXT", "Validation"),
-    t("v10", "Test return-credit interest", "launch", "NOT STARTED", "LATER", "Validation"),
-    t("v11", "Collect objections and adjust copy", "launch", "NOT STARTED", "LATER", "Validation"),
+    t("la-golive", "Go live", "launch", "NOT STARTED", "LATER", "Readiness", {
+      launchArea: "Storefront",
+      steps: [
+        step("l11", "Launch date", "The date"),
+        step("l12", "Checkout tested", "Checkout, shipping, and emails"),
+        step("l13", "Customer policies", "Returns, shipping, care"),
+        step("l14", "Launch open", "Date it opened"),
+      ],
+    }),
+  ];
+}
 
-    t("l1", "Finalize launch scents", "launch", "NOT STARTED", "LATER", "Readiness", { launchArea: "Product" }),
-    t("l2", "Finalize launch wax", "launch", "NOT STARTED", "LATER", "Readiness", { launchArea: "Product" }),
-    t("l3", "Finalize tested wick and profile system", "launch", "NOT STARTED", "LATER", "Readiness", { launchArea: "Product" }),
-    t("l4", "Finalize vessel supply", "launch", "NOT STARTED", "LATER", "Readiness", { launchArea: "Inventory" }),
-    t("l5", "Finalize packaging", "launch", "NOT STARTED", "LATER", "Readiness", { launchArea: "Packaging" }),
-    t("l6", "Finalize retail prices", "launch", "NOT STARTED", "LATER", "Readiness", { launchArea: "Product" }),
-    t("l7", "Produce first 30–50 sellable candles", "launch", "NOT STARTED", "LATER", "Readiness", { launchArea: "Inventory" }),
-    t("l8", "Produce burn-test and photography units", "launch", "NOT STARTED", "LATER", "Readiness", { launchArea: "Product" }),
-    t("l9", "Hold a replacement reserve", "launch", "NOT STARTED", "LATER", "Readiness", { launchArea: "Inventory" }),
-    t("l10", "Create the waitlist", "launch", "NOT STARTED", "NEXT", "Readiness", { launchArea: "Content" }),
-    t("l11", "Set the launch date", "launch", "NOT STARTED", "LATER", "Readiness"),
-    t("l12", "Test checkout, shipping, and customer emails", "launch", "NOT STARTED", "LATER", "Readiness", { launchArea: "Storefront" }),
-    t("l13", "Finalize customer policies", "launch", "NOT STARTED", "LATER", "Readiness", { launchArea: "Admin" }),
-    t("l14", "Open the first launch", "launch", "NOT STARTED", "LATER", "Readiness"),
-    t("l15", "Hold the post-launch review", "launch", "NOT STARTED", "LATER", "Readiness"),
+/** Tasks kept for later: out of every count and active list until brought back. */
+function afterLaunchTasks(): Task[] {
+  const later = { afterLaunch: true };
+  return [
+    t("c8", "Evaluate business credit card options", "company", "NOT STARTED", "LATER", "Finance", {
+      ...later,
+      notes: "Financing strategy is unresolved. Do not treat credit as startup cash.",
+    }),
+    t("b4", "Create maker’s mark", "brand", "NOT STARTED", "LATER", "Logo", later),
+    t("b14", "Design thank-you insert", "brand", "NOT STARTED", "LATER", "Packaging", later),
+    t("b15", "Design packaging sticker and tape system", "brand", "NOT STARTED", "LATER", "Packaging", later),
+    t("b16", "Design shipping box treatment", "brand", "NOT STARTED", "LATER", "Packaging", later),
+    t("b18", "Create social templates", "brand", "NOT STARTED", "LATER", "Photography", later),
+    t("b19", "Create market and pop-up signage", "brand", "NOT STARTED", "LATER", "Photography", later),
+    t("b20", "Create return-program card", "brand", "NOT STARTED", "LATER", "Packaging", later),
+    t("m17", "Calculate average order value targets", "commerce", "NOT STARTED", "LATER", "Pricing", later),
+    t("m18", "Calculate monthly fixed costs", "commerce", "NOT STARTED", "LATER", "Pricing", later),
+    t("m19", "Calculate break-even units and orders", "commerce", "NOT STARTED", "LATER", "Pricing", later),
+    t("m22", "Determine working-capital reserve", "commerce", "NOT STARTED", "LATER", "Budget", later),
+    t("m23", "Decide how much credit is safe to use", "commerce", "NOT STARTED", "LATER", "Budget", later),
+    t("sf6", "Build the “what might arrive” gallery", "commerce", "NOT STARTED", "LATER", "Storefront", later),
+    t("sf8", "Build return-program framework", "commerce", "NOT STARTED", "LATER", "Storefront", later),
+    t("n3", "Film sourcing, cleaning, scent work, and pours", "launch", "NOT STARTED", "LATER", "Content", later),
+    t("n4", "Film curing, QC, and mystery reveals", "launch", "NOT STARTED", "LATER", "Content", later),
+    t("n7", "Build launch content bank", "launch", "NOT STARTED", "LATER", "Content", later),
+    t("n8", "Create launch-week posting schedule", "launch", "NOT STARTED", "LATER", "Content", later),
+    t("v5", "Test reaction to the vessel gallery", "launch", "NOT STARTED", "LATER", "Validation", later),
+    t("v10", "Test return-credit interest", "launch", "NOT STARTED", "LATER", "Validation", later),
+    t("l15", "Hold the post-launch review", "launch", "NOT STARTED", "LATER", "Readiness", later),
+  ];
+}
+
+export const AFTER_LAUNCH_IDS = afterLaunchTasks().map((task) => task.id);
+
+/** Old tasks dropped: duplicates of other work, or work that can't start until there are sales. */
+export const CUT_TASK_IDS = ["c2", "s4", "s7", "s8", "s12", "s13", "s14", "s15", "m13", "l1", "l2", "l3", "l4", "l5", "l6"];
+
+/** A cut duplicate whose progress belongs on another task's field: [task id, step id]. */
+export const CUT_TASK_ALIASES: Record<string, [string, string]> = {
+  c2: ["co-name", "c5"],
+  s7: ["pl-wax", "p6"],
+  s8: ["pl-wax", "p6"],
+  s12: ["br-labels", "b9"],
+  s13: ["br-pack", "b13"],
+  l6: ["cm-pricing", "m15"],
+};
+
+function tasks(): Task[] {
+  const combined = combinedTasks();
+  const company = combined.filter((task) => task.workstream === "company");
+  const rest = combined.filter((task) => task.workstream !== "company");
+  return [
+    ...company,
+    ...productLabTracks(),
+    ...rest,
     t("r1", "File new evidence into the discovery worksheet", "research", "NOT STARTED", "NEXT", "Notes", {
       relatedDocument: "doc-discovery",
     }),
+    ...afterLaunchTasks(),
   ];
 }
 
@@ -507,25 +617,84 @@ function experiments(): Experiment[] {
   ];
 }
 
-function scents(): Scent[] {
+/** The six signature scents. Formulas are untested starting blends from the Candle Lab sheet. */
+export function scents(): Scent[] {
   const base = {
-    keyNotes: "",
-    supplier: "",
-    materials: "",
-    formula: "",
-    load: "6%",
+    inspiration: "",
+    supplier: "CandleScience",
+    load: "8%",
     coldThrow: "",
     hotThrow: "",
     approved: false,
-    costPerCandle: "",
+    costPerCandle: "About $2.55 Regular, $3.43 Large (oil at $3.70/oz, 8% load)",
   };
   return [
-    { ...base, slot: "01", workingName: "Cashmere Woods", role: "Cozy / warm / elevated", mood: "", inspiration: "Inspired by Glade Cashmere Woods, but more expensive-feeling: soft woods, amber, musk, cashmere-type warmth.", notes: "" },
-    { ...base, slot: "02", workingName: "Rainy Clean / Art-Class Soap", role: "Fresh / aquatic / nostalgic", mood: "", inspiration: "Rain, clean air, watery freshness — with that distinctive clear aquarium/sea-creature hand soap from childhood art class as a possible inspiration.", notes: "" },
-    { ...base, slot: "03", workingName: "Woodsy Earth", role: "Grounded / outdoorsy", mood: "", inspiration: "Piney, earthy, forest-like, possibly cedar/resin/moss/soil notes. Less “Christmas tree,” more grounded nature.", notes: "" },
-    { ...base, slot: "04", workingName: "Bespoke Vanilla", role: "Familiar but peculiar", mood: "", inspiration: "Vanilla as the approachable scent, but paired with something unexpected so it doesn't feel like a basic vanilla candle.", notes: "" },
-    { ...base, slot: "05", workingName: "Childhood Memory", role: "Nostalgic / abstract / emotional", mood: "", inspiration: "A scent that makes someone go “I don't know what this is, but I remember this.” Built around shared Gen Z/millennial childhood sensory memories rather than an obvious fragrance category.", notes: "" },
-    { ...base, slot: "06", workingName: "???", role: "Open slot", mood: "", inspiration: "Not decided yet — this is the one we still need to discover.", notes: "" },
+    {
+      ...base,
+      slot: "01",
+      workingName: "Off the Record",
+      role: "Cozy / warm / elevated",
+      mood: "Behind an unmarked door, the night is just getting started. Worn leather, juniper and cracked peppercorn, softened by cashmere and warm amber. What's said here stays here.",
+      keyNotes: "Leather · Juniper · Cashmere",
+      materials: "Speakeasy (3 × 1 oz), Cashmere Musk (2 × 1 oz)",
+      formula: "60% Speakeasy, 40% Cashmere Musk (6 g + 4 g per 10 g trial)",
+      notes: "Expected: botanical leather softened by amber, musk and a powdery finish. If too leathery, test 50/50. Was Cashmere Woods.",
+    },
+    {
+      ...base,
+      slot: "02",
+      workingName: "Art Class Soap",
+      role: "Fresh / aquatic / nostalgic",
+      mood: "That soap at the art room sink. Honeydew and pear with clean linen and a breath of sea salt, like washing the paint off your hands before the bell rings.",
+      keyNotes: "Melon · Linen · Sea salt",
+      materials: "Honeydew Melon (2 × 1 oz), Fresh Linen Odor Eliminator (2 × 1 oz), Sel de Mer (1 oz), Orchard Pear (1 oz)",
+      formula: "40% Honeydew Melon, 30% Fresh Linen Odor Eliminator, 20% Sel de Mer, 10% Orchard Pear (4 / 3 / 2 / 1 g)",
+      notes: "Expected: melon-and-pear soap, clean linen and mineral air. Honeydew Melon and Orchard Pear are CleanScents without the + badge, the agreed exception.",
+    },
+    {
+      ...base,
+      slot: "03",
+      workingName: "Legend Has It",
+      role: "Grounded / outdoorsy",
+      mood: "Deep in the redwoods, where the old stories began. Damp moss, cedar and forest floor, with the last embers of a fire still telling tall tales.",
+      keyNotes: "Redwood · Moss · Ember",
+      materials: "Redwoods and Moss (4 oz), Bonfire Embers (2 × 1 oz)",
+      formula: "75% Redwoods and Moss, 25% Bonfire Embers (7.5 g + 2.5 g)",
+      notes: "Expected: damp forest, cedar and moss with a restrained campfire finish. If too smoky, test 85/15. Was Woodsy / Earth.",
+    },
+    {
+      ...base,
+      slot: "04",
+      workingName: "Haute Vanilla",
+      role: "Familiar but peculiar",
+      mood: "Vanilla, dressed up. Rich vanilla bean over warm white oak with a creamy, never-too-sweet finish. The expensive upgrade to your everyday vanilla.",
+      keyNotes: "Vanilla · White oak · Cream",
+      materials: "White Oak and Vanilla (4 oz), Very Vanilla (2 × 1 oz)",
+      formula: "75% White Oak and Vanilla, 25% Very Vanilla (7.5 g + 2.5 g)",
+      notes: "Expected: warm oak and vanilla with a restrained creamy sweetness. Very Vanilla's cake notes need a light hand. Was Bespoke Vanilla.",
+    },
+    {
+      ...base,
+      slot: "05",
+      workingName: "Streetlights On",
+      role: "Nostalgic / abstract / emotional",
+      mood: "Running home as the streetlights flicker on, cheeks cold from the open air. Lavender and cedar with a soft powder finish, like clean pajamas at the end of a perfect day.",
+      keyNotes: "Mountain air · Lavender · Powder",
+      materials: "Serene Summit (4 oz + 1 oz), Baby Powder (1 oz)",
+      formula: "85% Serene Summit, 15% Baby Powder (8.5 g + 1.5 g)",
+      notes: "Expected: fresh outdoor air, lavender and cedar with a soft powder finish. Was Childhood Memories.",
+    },
+    {
+      ...base,
+      slot: "06",
+      workingName: "Butterfly Conservatory",
+      role: "Luxury floral",
+      mood: "Behind the glass, everything is in bloom. Peony and magnolia open over crisp apple and bamboo, warmed by a touch of soft amber.",
+      keyNotes: "Peony · Magnolia · Green apple",
+      materials: "Azura (4 oz), Magnolia and Peony (2 × 1 oz)",
+      formula: "75% Azura, 25% Magnolia and Peony (7.5 g + 2.5 g)",
+      notes: "Expected: fresh apple and bamboo opening, a fuller spring floral heart and soft amber. Compare with Azura alone. Was Luxury Floral.",
+    },
   ];
 }
 
@@ -557,11 +726,11 @@ function vessels(): Vessel[] {
     notes,
   });
   return [
-    row("vs1", "R-014", "Small", "", "S-Standard", "Clear", "Clear", "Needs Testing", "Replace with a measured jar. This row is a placeholder."),
-    row("vs2", "R-018", "Small", "", "S-Wide", "Amber", "Color", "Needs Testing", "Placeholder until diameter is recorded."),
-    row("vs3", "R-022", "Medium", "", "M-Narrow", "Pale green", "Color", "Needs Testing", "Placeholder."),
-    row("vs4", "R-027", "Medium", "", "M-Standard", "Clear", "Clear", "Accepted", "Example of an accepted profile. Confirm before relying on it."),
-    row("vs5", "R-031", "Medium", "", "M-Wide", "Smoke", "Color", "Needs Testing", "Placeholder."),
+    row("vs1", "R-014", "Regular", "", "S-Standard", "Clear", "Clear", "Needs Testing", "Replace with a measured jar. This row is a placeholder."),
+    row("vs2", "R-018", "Regular", "", "S-Wide", "Amber", "Color", "Needs Testing", "Placeholder until diameter is recorded."),
+    row("vs3", "R-022", "Large", "", "M-Narrow", "Pale green", "Color", "Needs Testing", "Placeholder."),
+    row("vs4", "R-027", "Large", "", "M-Standard", "Clear", "Clear", "Accepted", "Example of an accepted profile. Confirm before relying on it."),
+    row("vs5", "R-031", "Large", "", "M-Wide", "Smoke", "Color", "Needs Testing", "Placeholder."),
     row("vs6", "R-040", "Large", "", "L-Standard", "Clear", "Clear", "Needs Testing", "Placeholder."),
     row("vs7", "R-044", "Large", "", "L-Wide", "Olive", "Color", "Rejected", "Example rejection: too wide for a stable wick. Confirm with a real measurement."),
   ];
@@ -632,51 +801,47 @@ function suppliers(): Supplier[] {
   ];
 }
 
-function economics(): SizeModel[] {
-  return [
-    model("Small", "8–10 oz", 37, {
-      wax: 1.2,
-      fragrance: 1.6,
-      wick: 0.22,
-      vessel: 2.2,
-      prepLabor: 2.8,
-      closure: 1.1,
-      labels: 0.55,
-      packaging: 1.6,
-      paymentFees: 1.45,
-      shippingMaterials: 0.7,
-      defectAllowance: 0.45,
-      labor: 1.13,
-    }),
-    model("Medium", "12–16 oz", 46, {
-      wax: 2.2,
-      fragrance: 2.8,
-      wick: 0.3,
-      vessel: 4,
-      prepLabor: 3.5,
-      closure: 1.2,
-      labels: 0.7,
-      packaging: 2.4,
-      paymentFees: 1.9,
-      shippingMaterials: 1,
-      defectAllowance: 0.8,
-      labor: 2.2,
-    }),
-    model("Large", "17–20 oz", 58, {
-      wax: 3.2,
-      fragrance: 4.2,
-      wick: 0.4,
-      vessel: 5.5,
-      prepLabor: 4,
-      closure: 1.4,
-      labels: 0.9,
-      packaging: 3.2,
-      paymentFees: 2.4,
-      shippingMaterials: 1.4,
-      defectAllowance: 1.2,
-      labor: 5.2,
-    }),
-  ];
+/**
+ * Regular is the 10 oz recycled jar (about 8.6 oz of wax); Large is the 13.5 oz (about 11.6 oz).
+ * Wax, fragrance, and vessel come from the October orders. Everything else is still an estimate.
+ */
+export function economics(): SizeModel[] {
+  const actual = (amount: number): MoneyCell => ({ amount, source: "ACTUAL" });
+  const regular = model("Regular", "8–12 oz", 32, {
+    wax: 0,
+    fragrance: 0,
+    wick: 0.22,
+    vessel: 0,
+    prepLabor: 2.8,
+    closure: 1.1,
+    labels: 0.55,
+    packaging: 1.6,
+    paymentFees: 1.45,
+    shippingMaterials: 0.7,
+    defectAllowance: 0.45,
+    labor: 1.13,
+  });
+  const large = model("Large", "13–16 oz", 38, {
+    wax: 0,
+    fragrance: 0,
+    wick: 0.3,
+    vessel: 0,
+    prepLabor: 3.5,
+    closure: 1.2,
+    labels: 0.7,
+    packaging: 2.4,
+    paymentFees: 1.9,
+    shippingMaterials: 1,
+    defectAllowance: 0.8,
+    labor: 2.2,
+  });
+  regular.lines.wax = actual(1.77);
+  regular.lines.fragrance = actual(2.55);
+  regular.lines.vessel = actual(3.4);
+  large.lines.wax = actual(2.39);
+  large.lines.fragrance = actual(3.43);
+  large.lines.vessel = actual(3.57);
+  return [regular, large];
 }
 
 function budget(): BudgetLine[] {
@@ -705,7 +870,7 @@ function budget(): BudgetLine[] {
   ];
 }
 
-function skus(): LaunchSku[] {
+export function skus(): LaunchSku[] {
   const sku = (id: string, scent: string, size: LaunchSku["size"], planned: number): LaunchSku => ({
     id,
     scent,
@@ -716,18 +881,13 @@ function skus(): LaunchSku[] {
     ready: 0,
     sold: 0,
   });
-  return [
-    sku("sku1", "01 Bright / Fresh", "Small", 6),
-    sku("sku2", "01 Bright / Fresh", "Medium", 4),
-    sku("sku3", "02 Green / Botanical", "Small", 4),
-    sku("sku4", "02 Green / Botanical", "Medium", 4),
-    sku("sku5", "03 Woody / Dark", "Small", 4),
-    sku("sku6", "03 Woody / Dark", "Medium", 4),
-    sku("sku7", "03 Woody / Dark", "Large", 2),
-    sku("sku8", "04 Warm / Gourmand", "Medium", 6),
-    sku("sku9", "05 Clean / Atmospheric", "Small", 4),
-    sku("sku10", "05 Clean / Atmospheric", "Medium", 4),
-  ];
+  // Batch 01: 38 jars. Each scent gets three Regular and three Large; Streetlights On gets a fourth Large.
+  // One more Regular goes to Haute Vanilla, Legend Has It, or Butterfly Conservatory once that's decided.
+  const names = ["01 Off the Record", "02 Art Class Soap", "03 Legend Has It", "04 Haute Vanilla", "05 Streetlights On", "06 Butterfly Conservatory"];
+  return names.flatMap((name, at) => [
+    sku(`sku${at * 2 + 1}`, name, "Regular", 3),
+    sku(`sku${at * 2 + 2}`, name, "Large", name.startsWith("05") ? 4 : 3),
+  ]);
 }
 
 function content(): ContentItem[] {
