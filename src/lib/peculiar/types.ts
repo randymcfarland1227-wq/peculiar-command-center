@@ -290,6 +290,8 @@ export interface ResearchQuestion {
   status: TaskStatus;
   decisionAffected: string;
   workstreams: Workstream[];
+  /** What the research turned up, once there is something. */
+  answer?: string;
 }
 
 export interface DocLink {

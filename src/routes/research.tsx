@@ -75,6 +75,20 @@ function ResearchPage() {
               <StatusChip status={item.status} />
             </div>
             <p className="mt-2 text-sm text-muted">{item.why}</p>
+            <div className="mt-3">
+              <Field label="What we found">
+                <AreaInput
+                  value={item.answer ?? ""}
+                  rows={Math.max(3, (item.answer ?? "").split("\n").reduce((sum, line) => sum + Math.ceil((line.length || 1) / 60), 0) + 1)}
+                  onChange={(event) => updateQuestion(item.id, { answer: event.target.value })}
+                />
+              </Field>
+              {/^https?:\/\//.test(item.link) ? (
+                <a href={item.link} target="_blank" rel="noreferrer" className="mt-1 inline-flex h-11 items-center text-sm text-olive underline underline-offset-4">
+                  Open source
+                </a>
+              ) : null}
+            </div>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
               <Field label="Evidence needed">
                 <TextInput value={item.evidenceNeeded} onChange={(event) => updateQuestion(item.id, { evidenceNeeded: event.target.value })} />

@@ -12,6 +12,7 @@ const UPDATES: { id: string; apply: (data: PeculiarData) => PeculiarData }[] = [
   { id: "2026-10-05-regular-large", apply: regularAndLarge },
   { id: "2026-10-05-supplies", apply: recordSupplies },
   { id: "2026-10-05-wicks-labels-research", apply: wicksLabelsResearch },
+  { id: "2026-10-05-research-findings", apply: researchFindings },
 ];
 
 export function applyUpdates(data: PeculiarData): PeculiarData {
@@ -504,4 +505,137 @@ function wicksLabelsResearch(data: PeculiarData): PeculiarData {
   );
 
   return { ...data, tasks, suppliers, acquisitions: withWaxLink, budget, economics: economicsRows, decisions, questions, experiments, blockers };
+}
+
+/** Answered research, checked October 5, 2026. Estimates are marked as estimates. */
+function finding(
+  id: string,
+  question: string,
+  category: string,
+  answer: string,
+  link: string,
+  decisionAffected: string,
+  workstreams: ResearchQuestion["workstreams"],
+): ResearchQuestion {
+  return {
+    id,
+    question,
+    category,
+    why: "Researched October 5, 2026.",
+    evidenceNeeded: "",
+    link,
+    owner: "Founder",
+    due: "",
+    status: "COMPLETE",
+    decisionAffected,
+    workstreams,
+    answer,
+  };
+}
+
+const FINDINGS: ResearchQuestion[] = [
+  finding(
+    "q13",
+    "What does an LLC cost to start and keep in Maryland?",
+    "Company",
+    "Filing: $100 state fee at Maryland Business Express, plus a card fee; expediting costs extra.\nEvery year after: $300 annual report (Form 1), due April 15. The first is due April 15, 2027.\nOptional: a registered-agent service, about $50–150 a year, keeps your home address off the public record.\nEIN: free from the IRS.",
+    "https://www.zenbusiness.com/maryland-filing-fees/",
+    "Business setup",
+    ["company"],
+  ),
+  finding(
+    "q14",
+    "Do I need a trader's license or a home-business permit?",
+    "Company",
+    "Trader's license: no. Maryland exempts makers selling what they make.\nHome business: Baltimore County allows a home occupation with no sign outside, no customers buying at the house, no employees except family who live there, and only household equipment. Making candles and shipping them out fits; skip doorstep pickups.\nNo home-business permit found. Baltimore County Zoning Review in Towson can confirm.",
+    "https://www.marylandcomptroller.gov/businesses/new-business/business-licenses.html",
+    "Legal and tax",
+    ["company"],
+  ),
+  finding(
+    "q15",
+    "How does Maryland sales tax work for this business?",
+    "Company",
+    "Register free with the Combined Registration Application once you have the EIN. Approval takes a few business days.\nCharge 6% on sales to Maryland buyers only.\nFile on the schedule the Comptroller assigns, even when you sold nothing.",
+    "https://interactive.marylandtaxes.gov/webapps/comptrollercra",
+    "Legal and tax",
+    ["company", "commerce"],
+  ),
+  finding(
+    "q16",
+    "What insurance do I need, and what does it cost?",
+    "Company",
+    "Required by law: none, with no employees (no workers' comp or unemployment insurance).\nRecommended before the first sale: general liability with products liability, usually $1 million per claim. Estimate: about $450–1,500 a year.\nMaker plans: ACT Insurance's yearly plan is about $515 for $2 million; per-event cover starts around $49.\nHomeowners and renters policies usually exclude business activity. Markets and shops often ask for a certificate of insurance.",
+    "https://www.actinsurance.com/candle-maker-insurance",
+    "Insurance",
+    ["company"],
+  ),
+  finding(
+    "q17",
+    "What will shipping cost?",
+    "Shipping",
+    "Estimates from September 30: a boxed 14–16 oz candle weighs about 1.5–2 lb, and USPS Ground Advantage runs about $7–12 depending on distance.\nBox, honeycomb paper, and card add about $1.50–2.50 an order.\nOptions: a flat $8 per order, or free shipping over $75 to encourage 2–3 candle orders.\nPirate Ship gives discounted USPS labels free, with no subscription.",
+    "https://www.pirateship.com",
+    "Shipping policy",
+    ["commerce"],
+  ),
+  finding(
+    "q18",
+    "What's the cheapest way to take payments on the storefront?",
+    "Storefront",
+    "Estimates from September 30, from memory, so check the pricing pages before signing up:\nStripe Payment Links: no monthly fee.\nShopify Starter: about $5 a month, with buy buttons on your own site.\nCard processing: about 2.9% + $0.30 a sale.\nStart with Stripe plus Pirate Ship; switch if volume grows.",
+    "https://stripe.com/payments/payment-links",
+    "Storefront checkout",
+    ["commerce"],
+  ),
+  finding(
+    "q19",
+    "What can the candles sell for, and what's the profit?",
+    "Pricing",
+    "Estimates from September 30: each candle costs about $7–10 to make.\nSuggested prices: Regular about $32, Large about $38 (recycled 10 oz about $28, 13.5 oz about $36).\nMargin after card fees: about 65–76%.\nThe first batch (about $335 of supplies) breaks even after about 12–13 sales.\n120 candles a month is about $3,950 in sales and $2,300–2,800 profit before income tax.",
+    "",
+    "Pricing",
+    ["commerce", "launch"],
+  ),
+  finding(
+    "q20",
+    "How big is the candle market?",
+    "Customer",
+    "Approximate, from memory: US candle sales are about $3 billion a year (National Candle Association), and about 7 in 10 US households use candles.\nA large share of sales, often estimated at about a third, happens in the holiday season.\nPremium, clean candles are the fastest-growing part.",
+    "https://candles.org",
+    "Launch timing",
+    ["launch"],
+  ),
+];
+
+/** Research notes for the task cards, so the numbers sit where the work is. */
+const TASK_NOTES: Record<string, string> = {
+  "co-setup": "Costs: LLC $100 to file, then $300 every year (April 15). Registered agent about $50–150 a year if you want your address private. EIN free.",
+  "co-legal": "Sales tax registration is free; charge 6% on Maryland sales. No trader's license or home-business permit needed.",
+  "co-insurance": "Estimate: about $450–1,500 a year for $1 million. ACT maker plan about $515 a year for $2 million. Not required by law.",
+  "cm-shipping": "Estimate: USPS about $7–12 per boxed candle; box and padding about $1.50–2.50 an order. Flat $8 or free over $75. Pirate Ship for labels.",
+  "cm-store": "Checkout estimate: Stripe Payment Links, no monthly fee; card fees about 2.9% + $0.30.",
+  "cm-pricing": "Estimate: Regular about $32, Large about $38. Cost to make about $7–10. Research page has the full numbers.",
+};
+
+function researchFindings(data: PeculiarData): PeculiarData {
+  const known = new Set(data.questions.map((item) => item.id));
+  const questions = [...FINDINGS.filter((item) => !known.has(item.id)), ...data.questions];
+
+  const tasks = data.tasks.map((task) => {
+    const note = TASK_NOTES[task.id];
+    if (!note || task.notes.includes(note)) return task;
+    return { ...task, notes: [task.notes, note].filter(Boolean).join("\n") };
+  });
+
+  const ESTIMATES: Record<string, [number, number]> = { "bud-form": [275, 200], "bud-ins": [900, 515] };
+  const budget = data.budget.map((line) => {
+    const change = ESTIMATES[line.id];
+    return change && line.estimated === change[0] ? { ...line, estimated: change[1] } : line;
+  });
+  if (!budget.some((line) => line.id === "bud-annual")) {
+    budget.splice(1, 0, { id: "bud-annual", label: "LLC annual report (yearly)", estimated: 300, actual: 0, paid: 0, workstreams: ["company"] });
+  }
+
+  return { ...data, questions, tasks, budget };
 }
