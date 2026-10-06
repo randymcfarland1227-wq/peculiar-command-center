@@ -13,6 +13,7 @@ const UPDATES: { id: string; apply: (data: PeculiarData) => PeculiarData }[] = [
   { id: "2026-10-05-supplies", apply: recordSupplies },
   { id: "2026-10-05-wicks-labels-research", apply: wicksLabelsResearch },
   { id: "2026-10-05-research-findings", apply: researchFindings },
+  { id: "2026-10-06-launch-sweep", apply: launchSweep },
 ];
 
 export function applyUpdates(data: PeculiarData): PeculiarData {
@@ -638,4 +639,123 @@ function researchFindings(data: PeculiarData): PeculiarData {
   }
 
   return { ...data, questions, tasks, budget };
+}
+
+/** Fields finished on October 5–6, 2026: drafts, the storefront, the owner floor, and brand work. */
+const SWEEP_ANSWERS: Record<string, Record<string, string>> = {
+  "co-books": {
+    c14: "Owner floor Ledger (peculiar-floor), with CSV import and export",
+    c15: "Schedule C categories, from the bookkeeping draft",
+    c16: "25% of each sale, set on the Ledger",
+  },
+  "pl-wax": {
+    p6: "At least 7 days; re-test hot throw at 14 (Safety and QC standards)",
+  },
+  "sa-docs": {
+    s1: "ASTM F2058, F2417, F2179, F1972, and no lead-core wicks (Safety and QC standards)",
+  },
+  "sa-burn": {
+    s3: "Tests page, using the protocol in Safety and QC standards",
+    s6: "Flame under 3 in, full melt pool by hour 4, glass side under about 140°F, no steady soot, burns calmly to 1/2 in",
+  },
+  "sa-release": {
+    s9: "YYMMDD-NN-V-B, e.g. 261012-05-R-1",
+    s10: "Glass, cured candle, and finish checks in Safety and QC standards",
+    s11: "Eight checks in Safety and QC standards, including insurance before the first sale",
+  },
+  "br-logo": {
+    b1: "Refined in Canva: Forest green, light green background, Since 2026",
+  },
+  "br-system": {
+    b5: "Forest #2F4F46 on parchment",
+    b6: "Playfair Display Italic, DM Serif Display, Josefin Sans Light, Montserrat Medium",
+    b7: "DM Serif Display, 01–06",
+  },
+  "br-labels": {
+    b8: "Done in Canva",
+    b9: "Done in Canva",
+    b10: "Done",
+    b11: "Done",
+  },
+  "br-pack": {
+    b13: "Canva care card, 3.5 × 2 in, front and back",
+  },
+  "cm-costs": {
+    m11: "Stripe: 2.9% + $0.30 per sale",
+  },
+  "cm-pricing": {
+    m14: "About $9.75 Regular, $11.25 Large (recycled jar, labor at $15/hr)",
+    m16: "About 66% Regular, 68% Large after card fees",
+    m15: "Regular $32, Large $40",
+  },
+  "cm-store": {
+    sf1: "Live at peculiarcandle.com",
+    sf2: "Built",
+    sf3: "Reclaimed and Recycled pages",
+    sf4: "Library plus a scene page for each blend",
+    sf5: "Size, blend, and Clear / Color / Surprise Me",
+    sf7: "About, Materials, and Care with FAQ",
+    sf9: "Cart works on a phone",
+    sf12: "Stripe Checkout, live",
+  },
+  "cm-waitlist": {
+    sf10: "Footer form on the storefront",
+  },
+  "cm-shipping": {
+    k7: "USPS Ground Advantage, labels through Pirate Ship",
+    k8: "$8 flat, free over $75, free Baltimore pickup",
+    k9: "June–September, may hold orders to places over 90°F; ship early in the week",
+    k10: "Photo within 7 days, replacement or refund, no need to return it",
+  },
+  "la-golive": {
+    l13: "Returns form live; shipping policy and care card written",
+  },
+};
+
+const SWEEP_DECISIONS: Decision[] = [
+  {
+    id: "d24",
+    date: "2026-10-06",
+    decision: "Regular is $32 and Large is $40, in either glass.",
+    category: "Pricing",
+    status: "DECIDED",
+    reason: "A wider gap makes Large feel like a step up. Both keep about two-thirds margin.",
+    evidence: "Pricing draft sheet, from real wax, oil, jar, and wick costs.",
+    revisitWhen: "After customer price reactions or the first month of sales.",
+    workstreams: ["commerce"],
+  },
+  {
+    id: "d25",
+    date: "2026-10-06",
+    decision: "Shipping is $8 flat per order, free over $75, by USPS Ground Advantage.",
+    category: "Policy",
+    status: "DECIDED",
+    reason: "Two Large candles ship free, which nudges orders up to two or three.",
+    evidence: "Shipping policy draft. Label costs are estimates until a box is weighed.",
+    revisitWhen: "Once real packed weights and zone prices are in.",
+    workstreams: ["commerce"],
+  },
+];
+
+function launchSweep(data: PeculiarData): PeculiarData {
+  const tasks = data.tasks.map((task) => {
+    const answers = SWEEP_ANSWERS[task.id];
+    if (!answers || !task.steps) return task;
+    const steps = task.steps.map((item) =>
+      answers[item.id] && !item.value.trim() ? { ...item, value: answers[item.id] } : item,
+    );
+    return settle({ ...task, steps });
+  });
+
+  const known = new Set(data.decisions.map((item) => item.id));
+  const decisions = [...data.decisions, ...SWEEP_DECISIONS.filter((item) => !known.has(item.id))];
+
+  // Large moved from $38 to $40; only an untouched estimate changes.
+  const economicsRows = data.economics.map((row) =>
+    row.size === "Large" && row.retail.source === "ESTIMATE" && row.retail.amount === 38
+      ? { ...row, retail: { amount: 40, source: "ACTUAL" as const } }
+      : row,
+  );
+
+  return { ...data, tasks, decisions, economics: economicsRows };
 }
