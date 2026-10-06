@@ -3,9 +3,10 @@ import { Check } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { countComplete, stepProgress, usePeculiar } from "@/lib/peculiar/store";
-import { WORKSTREAM_LABEL, type Decision, type Experiment, type Task } from "@/lib/peculiar/types";
+import { WORKSTREAM_LABEL, isDone, type Decision, type Experiment, type Task } from "@/lib/peculiar/types";
 import { DecisionChip, StatusChip } from "@/components/status-chip";
 import { DeleteButton } from "@/components/fields";
+import { FinalizeButton, checkLabel, toggledDone } from "@/components/finalize-button";
 
 export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
@@ -76,7 +77,7 @@ function Dashboard() {
         </div>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
           {view === "dashboard"
-            ? "The work still to do. Each percent is tasks marked complete, divided by every task in that group."
+            ? "The work still to do. Each percent is tasks marked complete or finalized, divided by every task in that group. Complete means done for now; the lock finalizes it once the call is settled."
             : "What you have decided, measured, and sourced so far. Nothing here is a task."}
         </p>
       </header>
@@ -96,7 +97,7 @@ function Dashboard() {
             <TaskBlock title="Commerce" href="/commerce" tasks={commerce} />
             <TaskBlock title="Launch" href="/launch" tasks={launch} />
             <article className="border border-line bg-sheet p-4">
-              <BlockHead title="Content" href="/content" aside={`${content.filter((item) => item.status === "COMPLETE").length} of ${content.length}`} />
+              <BlockHead title="Content" href="/content" aside={`${content.filter((item) => isDone(item.status)).length} of ${content.length}`} />
               <ul>
                 {content.map((item) => (
                   <li key={item.id} className="flex items-start justify-between gap-3 border-t border-line py-2 text-sm">
@@ -229,7 +230,7 @@ function Column({
   children,
 }: {
   title: string;
-  count: { done: number; total: number; percent: number };
+  count: { done: number; finalized: number; total: number; percent: number };
   children: ReactNode;
 }) {
   return (
@@ -243,7 +244,7 @@ function Column({
           <div className="h-1 bg-forest" style={{ width: `${count.percent}%` }} />
         </div>
         <p className="mt-2 text-xs tracking-widest text-muted">
-          {count.done} of {count.total} complete
+          {count.done} of {count.total} complete · {count.finalized} finalized
         </p>
       </div>
       <div className="flex flex-col gap-3">{children}</div>
@@ -338,13 +339,13 @@ function TaskLine({ task }: { task: Task }) {
   const updateTask = usePeculiar((s) => s.updateTask);
   const removeTask = usePeculiar((s) => s.removeTask);
   const setOpenTask = usePeculiar((s) => s.setOpenTask);
-  const done = task.status === "COMPLETE";
+  const done = isDone(task.status);
   return (
     <li className="flex items-center gap-2 border-t border-line">
       <button
         type="button"
-        aria-label={done ? `Reopen ${task.title}` : `Complete ${task.title}`}
-        onClick={() => updateTask(task.id, { status: done ? "IN PROGRESS" : "COMPLETE" })}
+        aria-label={checkLabel(task)}
+        onClick={() => updateTask(task.id, { status: toggledDone(task) })}
         className={cn(
           "flex h-11 w-11 shrink-0 items-center justify-center border",
           done ? "border-forest bg-forest text-paper" : "border-line bg-paper",
@@ -355,6 +356,7 @@ function TaskLine({ task }: { task: Task }) {
       <button type="button" onClick={() => setOpenTask(task.id)} className={cn("flex-1 py-2 text-left text-sm", done && "text-muted line-through")}>
         {task.title}
       </button>
+      <FinalizeButton task={task} />
       <DeleteButton compact label={`Delete ${task.title}`} onConfirm={() => removeTask(task.id)} />
     </li>
   );
@@ -365,14 +367,14 @@ function StepTile({ task }: { task: Task }) {
   const updateTask = usePeculiar((s) => s.updateTask);
   const setOpenTask = usePeculiar((s) => s.setOpenTask);
   const progress = stepProgress(task);
-  const done = task.status === "COMPLETE";
+  const done = isDone(task.status);
   const next = progress.next && !done ? `Next: ${progress.next.label}` : undefined;
   return (
     <li className={cn("flex h-11 items-stretch border", done ? "border-forest" : "border-line bg-paper")}>
       <button
         type="button"
-        aria-label={done ? `Reopen ${task.title}` : `Complete ${task.title}`}
-        onClick={() => updateTask(task.id, { status: done ? "IN PROGRESS" : "COMPLETE" })}
+        aria-label={checkLabel(task)}
+        onClick={() => updateTask(task.id, { status: toggledDone(task) })}
         className={cn("flex w-10 items-center justify-center border-r", done ? "border-forest bg-forest text-paper" : "border-line bg-sheet")}
       >
         <Check className="size-4" />
@@ -380,6 +382,7 @@ function StepTile({ task }: { task: Task }) {
       <button type="button" title={next} onClick={() => setOpenTask(task.id)} className={cn("px-3 text-left text-sm", done && "text-muted line-through")}>
         {task.title}
       </button>
+      <FinalizeButton task={task} className="h-auto w-10 border-0 border-l" />
     </li>
   );
 }

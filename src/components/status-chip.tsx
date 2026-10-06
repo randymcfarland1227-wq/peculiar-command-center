@@ -9,7 +9,8 @@ const statusClass: Record<TaskStatus, string> = {
   TESTING: "bg-sage/30 text-forest",
   DECIDED: "bg-forest text-paper",
   ORDERED: "bg-olive text-paper",
-  COMPLETE: "bg-forest text-paper",
+  COMPLETE: "border border-forest bg-sheet text-forest",
+  FINALIZED: "bg-forest text-paper",
   BLOCKED: "bg-olive text-paper",
 };
 

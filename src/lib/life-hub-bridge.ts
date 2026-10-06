@@ -1,6 +1,6 @@
 /** Life Hub postMessage bridge — source id `candle`. See frontier LIFE_HUB.md. */
 
-import { WORKSTREAM_LABEL, type PeculiarData, type Task } from "@/lib/peculiar/types";
+import { WORKSTREAM_LABEL, isDone, type PeculiarData, type Task } from "@/lib/peculiar/types";
 
 /** Allowed Life Hub parent origins (GitHub Pages primary + legacy Worker). */
 export const LIFE_HUB_ORIGINS = [
@@ -70,8 +70,9 @@ export function setCandleStarred(id: string, starred: boolean) {
   writeStars(stars);
 }
 
+/** Complete (done for now) and finalized tasks both leave Life Hub's open list. */
 function isOpenTask(task: Task) {
-  return task.status !== "COMPLETE" && !task.afterLaunch;
+  return !isDone(task.status) && !task.afterLaunch;
 }
 
 function taskStatusLabel(task: Task) {

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Field, PageIntro, SectionTitle, SolidButton, TextInput, AreaInput, DeleteButton } from "@/components/fields";
 import { StatusChip } from "@/components/status-chip";
 import { uid, usePeculiar } from "@/lib/peculiar/store";
-import { STATUSES, type ResearchQuestion, type TaskStatus } from "@/lib/peculiar/types";
+import { STATUSES, isDone, type ResearchQuestion, type TaskStatus } from "@/lib/peculiar/types";
 
 export const Route = createFileRoute("/research")({
   component: ResearchPage,
@@ -66,7 +66,7 @@ function ResearchPage() {
           <SolidButton type="submit">Save question</SolidButton>
         </form>
       ) : null}
-      <SectionTitle title="Tracker" aside={`${questions.filter((item) => item.status !== "DECIDED" && item.status !== "COMPLETE").length} still open`} />
+      <SectionTitle title="Tracker" aside={`${questions.filter((item) => item.status !== "DECIDED" && !isDone(item.status)).length} still open`} />
       <ul className="flex flex-col gap-3">
         {questions.map((item) => (
           <li key={item.id} className="border border-line bg-sheet p-4">

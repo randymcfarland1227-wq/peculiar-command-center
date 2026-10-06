@@ -24,6 +24,7 @@ import type {
   Vessel,
   Acquisition,
 } from "./types";
+import { isDone } from "./types";
 
 interface UiState {
   openTaskId: string | null;
@@ -112,7 +113,7 @@ export function blankTask(partial: Partial<Task> = {}): Task {
 
 function withComplete(task: Task, patch: Partial<Task>): Task {
   const next = { ...task, ...patch };
-  if (patch.status === "COMPLETE") {
+  if (patch.status && isDone(patch.status)) {
     next.completedDate = task.completedDate || today();
   } else if (patch.status) {
     next.completedDate = "";
@@ -312,11 +313,15 @@ export const usePeculiar = create<Store>()(
   ),
 );
 
-/** A stepped task is complete once every field is filled, and in progress once any is. */
+/**
+ * A stepped task is complete once every field is filled, and in progress once any is.
+ * A task already checked off stays done while its fields are edited, since done for now
+ * often comes before every answer is final. Its check button reopens it.
+ */
 function statusFromSteps(current: TaskStatus, steps: TaskStep[]): TaskStatus {
+  if (isDone(current)) return current;
   const filled = steps.filter((item) => item.value.trim()).length;
   if (filled === steps.length) return "COMPLETE";
-  if (current === "COMPLETE") return "IN PROGRESS";
   if (filled > 0 && (current === "NOT STARTED" || current === "PLANNING")) return "IN PROGRESS";
   return current;
 }
@@ -426,18 +431,19 @@ export function stepProgress(task: Task) {
   return { done, total: steps.length, next };
 }
 
-/** Done out of total, leaving out tasks parked until after launch. */
+/** Done (complete or finalized) out of total, leaving out tasks parked until after launch. */
 export function countComplete(all: Task[]) {
   const tasks = all.filter((task) => !task.afterLaunch);
   const total = tasks.length;
-  const done = tasks.filter((task) => task.status === "COMPLETE").length;
-  return { done, total, percent: total ? Math.round((done / total) * 100) : 0 };
+  const done = tasks.filter((task) => isDone(task.status)).length;
+  const finalized = tasks.filter((task) => task.status === "FINALIZED").length;
+  return { done, finalized, total, percent: total ? Math.round((done / total) * 100) : 0 };
 }
 
 export function nextActions(tasks: Task[], limit = 5) {
   const rank = { NOW: 0, NEXT: 1, LATER: 2 };
   return tasks
-    .filter((task) => task.status !== "COMPLETE" && task.priority !== "LATER" && !task.afterLaunch)
+    .filter((task) => !isDone(task.status) && task.priority !== "LATER" && !task.afterLaunch)
     .slice()
     .sort((a, b) => {
       const byPriority = rank[a.priority] - rank[b.priority];

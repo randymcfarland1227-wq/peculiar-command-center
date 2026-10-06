@@ -5,7 +5,7 @@ import { StatusChip } from "@/components/status-chip";
 import { StepTrackRow } from "@/components/step-track";
 import { TaskList } from "@/components/task-list";
 import { usePeculiar } from "@/lib/peculiar/store";
-import { STATUSES } from "@/lib/peculiar/types";
+import { STATUSES, isDone } from "@/lib/peculiar/types";
 
 export const Route = createFileRoute("/product-lab")({
   component: ProductLabPage,
@@ -38,8 +38,8 @@ function ProductLabPage() {
       />
 
       <section className="mb-10">
-        <SectionTitle title="Build sequence" aside={`${tracks.filter((task) => task.status === "COMPLETE").length} of ${tracks.length} complete`} />
-        <Note>Left to right is build order. Fill each task's fields top to bottom. A task completes when every field has an answer, or when you check it off.</Note>
+        <SectionTitle title="Build sequence" aside={`${tracks.filter((task) => isDone(task.status)).length} of ${tracks.length} complete · ${tracks.filter((task) => task.status === "FINALIZED").length} finalized`} />
+        <Note>Left to right is build order. Fill each task's fields top to bottom. A task completes when every field has an answer, or when you check it off. Complete means done for now and leaves the open count; tap the lock to finalize it once testing settles the call.</Note>
         <div className="mt-4">
           <StepTrackRow tasks={tracks} numbered />
         </div>

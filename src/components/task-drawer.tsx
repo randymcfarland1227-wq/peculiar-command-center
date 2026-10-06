@@ -173,7 +173,12 @@ export function TaskDrawer() {
               ))}
             </SelectInput>
           </Field>
-          {record.completedDate ? <p className="text-xs tracking-widest text-muted">Completed {record.completedDate}</p> : null}
+          {record.completedDate ? (
+            <p className="text-xs tracking-widest text-muted">
+              Completed {record.completedDate}
+              {record.status === "FINALIZED" ? " · Finalized" : " · Not finalized yet"}
+            </p>
+          ) : null}
         </div>
         <div className="mt-auto flex gap-2 border-t border-line px-4 py-4">
           {draft ? (

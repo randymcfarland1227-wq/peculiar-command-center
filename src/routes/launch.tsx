@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageIntro, SectionTitle } from "@/components/fields";
 import { TaskList } from "@/components/task-list";
 import { usePeculiar } from "@/lib/peculiar/store";
-import { LAUNCH_AREAS } from "@/lib/peculiar/types";
+import { LAUNCH_AREAS, isDone } from "@/lib/peculiar/types";
 
 export const Route = createFileRoute("/launch")({
   component: LaunchPage,
@@ -16,7 +16,7 @@ function LaunchPage() {
 
   const gates = LAUNCH_AREAS.map((area) => {
     const items = tasks.filter((task) => task.launchArea === area && !task.afterLaunch);
-    const done = items.filter((task) => task.status === "COMPLETE").length;
+    const done = items.filter((task) => isDone(task.status)).length;
     return { area, done, total: items.length };
   });
 

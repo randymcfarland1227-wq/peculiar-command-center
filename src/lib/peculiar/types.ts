@@ -7,9 +7,18 @@ export const STATUSES = [
   "DECIDED",
   "ORDERED",
   "COMPLETE",
+  "FINALIZED",
   "BLOCKED",
 ] as const;
 export type TaskStatus = (typeof STATUSES)[number];
+
+/**
+ * COMPLETE is done for now: nothing to do today, but the call can still change once
+ * tests come back. FINALIZED is locked in. Both are out of every open count.
+ */
+export function isDone(status: TaskStatus) {
+  return status === "COMPLETE" || status === "FINALIZED";
+}
 
 export const PRIORITIES = ["NOW", "NEXT", "LATER"] as const;
 export type Priority = (typeof PRIORITIES)[number];

@@ -3,18 +3,19 @@ import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { prettyDate } from "@/lib/peculiar/format";
 import { stepProgress, usePeculiar } from "@/lib/peculiar/store";
-import type { Task } from "@/lib/peculiar/types";
+import { isDone, type Task } from "@/lib/peculiar/types";
 import { PriorityChip, StatusChip } from "@/components/status-chip";
 import { DeleteButton } from "@/components/fields";
+import { FinalizeButton, checkLabel, toggledDone } from "@/components/finalize-button";
 
-/** Task ids named in a stepped task's dependencies that are not complete yet. */
+/** Task ids named in a stepped task's dependencies that are not done yet (complete counts). */
 export function useWaitingOn(task: Task) {
   const tasks = usePeculiar((s) => s.tasks);
   const ids = task.dependencies
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
-  return tasks.filter((item) => ids.includes(item.id) && item.status !== "COMPLETE");
+  return tasks.filter((item) => ids.includes(item.id) && !isDone(item.status));
 }
 
 /** A component task shown as one column card. Its fields run top to bottom, in order. */
@@ -28,7 +29,7 @@ export function StepTrack({ task, index }: { task: Task; index?: number }) {
   const waitingOn = useWaitingOn(task);
   const steps = task.steps ?? [];
   const nextIndex = progress.next ? steps.indexOf(progress.next) : -1;
-  const done = task.status === "COMPLETE";
+  const done = isDone(task.status);
   const [howOpen, setHowOpen] = useState<string | null>(null);
 
   return (
@@ -48,8 +49,8 @@ export function StepTrack({ task, index }: { task: Task; index?: number }) {
         <div className="flex shrink-0 flex-col items-end gap-1">
           <button
             type="button"
-            aria-label={done ? `Reopen ${task.title}` : `Complete ${task.title}`}
-            onClick={() => updateTask(task.id, { status: done ? "IN PROGRESS" : "COMPLETE" })}
+            aria-label={checkLabel(task)}
+            onClick={() => updateTask(task.id, { status: toggledDone(task) })}
             className={cn(
               "flex h-11 w-11 shrink-0 items-center justify-center border",
               done ? "border-forest bg-forest text-paper" : "border-line bg-paper",
@@ -57,6 +58,7 @@ export function StepTrack({ task, index }: { task: Task; index?: number }) {
           >
             <Check className="size-4" />
           </button>
+          <FinalizeButton task={task} />
           <DeleteButton compact label={`Delete ${task.title}`} onConfirm={() => removeTask(task.id)} />
         </div>
       </div>

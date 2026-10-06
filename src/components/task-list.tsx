@@ -3,13 +3,14 @@ import { Check } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { prettyDate } from "@/lib/peculiar/format";
 import { usePeculiar } from "@/lib/peculiar/store";
-import { PRIORITIES, STATUSES, WORKSTREAM_LABEL, type Priority, type Task, type TaskStatus } from "@/lib/peculiar/types";
+import { PRIORITIES, STATUSES, WORKSTREAM_LABEL, isDone, type Priority, type Task, type TaskStatus } from "@/lib/peculiar/types";
 import { PriorityChip, StatusChip } from "@/components/status-chip";
 import { StepTrackRow } from "@/components/step-track";
 import { DeleteButton } from "@/components/fields";
+import { FinalizeButton, checkLabel, toggledDone } from "@/components/finalize-button";
 
 export function TaskList({ tasks, empty }: { tasks: Task[]; empty?: string }) {
-  const [scope, setScope] = useState<"active" | "all">("active");
+  const [scope, setScope] = useState<"active" | "pending" | "all">("active");
   const [priority, setPriority] = useState<"ALL" | Priority>("ALL");
   const [status, setStatus] = useState<"ALL" | TaskStatus>("ALL");
   const [query, setQuery] = useState("");
@@ -22,7 +23,8 @@ export function TaskList({ tasks, empty }: { tasks: Task[]; empty?: string }) {
     return tasks
       .filter((task) => {
         if (task.afterLaunch) return false;
-        if (scope === "active" && (task.priority === "LATER" || task.status === "COMPLETE")) return false;
+        if (scope === "active" && (task.priority === "LATER" || isDone(task.status))) return false;
+        if (scope === "pending" && task.status !== "COMPLETE") return false;
         if (priority !== "ALL" && task.priority !== priority) return false;
         if (status !== "ALL" && task.status !== status) return false;
         if (q && !`${task.title} ${task.notes} ${task.section}`.toLowerCase().includes(q)) return false;
@@ -54,6 +56,9 @@ export function TaskList({ tasks, empty }: { tasks: Task[]; empty?: string }) {
         <div className="flex flex-wrap gap-2">
           <Filter on={scope === "active"} onClick={() => setScope("active")}>
             Now and next
+          </Filter>
+          <Filter on={scope === "pending"} onClick={() => setScope("pending")}>
+            Awaiting final
           </Filter>
           <Filter on={scope === "all"} onClick={() => setScope("all")}>
             Full list
@@ -98,26 +103,27 @@ export function TaskList({ tasks, empty }: { tasks: Task[]; empty?: string }) {
             <ul className="border-t border-line">
               {items.filter((task) => !task.steps?.length).map((task) => (
                 <li key={task.id} className="grid grid-cols-[auto_1fr_auto] items-start gap-3 border-b border-line py-3">
-                  <button
-                    type="button"
-                    aria-label={task.status === "COMPLETE" ? `Reopen ${task.title}` : `Complete ${task.title}`}
-                    onClick={() =>
-                      updateTask(task.id, { status: task.status === "COMPLETE" ? "IN PROGRESS" : "COMPLETE" })
-                    }
-                    className={cn(
-                      "mt-1 flex h-11 w-11 items-center justify-center border",
-                      task.status === "COMPLETE" ? "border-forest bg-forest text-paper" : "border-line bg-sheet",
-                    )}
-                  >
-                    <Check className="size-4" />
-                  </button>
+                  <div className="mt-1 flex flex-col gap-1">
+                    <button
+                      type="button"
+                      aria-label={checkLabel(task)}
+                      onClick={() => updateTask(task.id, { status: toggledDone(task) })}
+                      className={cn(
+                        "flex h-11 w-11 items-center justify-center border",
+                        isDone(task.status) ? "border-forest bg-forest text-paper" : "border-line bg-sheet",
+                      )}
+                    >
+                      <Check className="size-4" />
+                    </button>
+                    <FinalizeButton task={task} />
+                  </div>
                   <div className="min-w-0">
                     <button
                       type="button"
                       onClick={() => setOpenTask(task.id)}
                       className={cn(
                         "text-left font-serif text-xl leading-snug",
-                        task.status === "COMPLETE" && "text-muted line-through",
+                        isDone(task.status) && "text-muted line-through",
                       )}
                     >
                       {task.title}
