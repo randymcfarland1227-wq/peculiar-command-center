@@ -651,6 +651,10 @@ const SWEEP_ANSWERS: Record<string, Record<string, string>> = {
   "pl-wax": {
     p6: "At least 7 days; re-test hot throw at 14 (Safety and QC standards)",
   },
+  "pl-vessels": {
+    p24: "No chips or cracks, labels and glue off, survives a warm-up with no craze, jar type has passed a burn test",
+    p25: "Any chip or crack, crazing on warm-up, or too wide for a steady wick",
+  },
   "sa-docs": {
     s1: "ASTM F2058, F2417, F2179, F1972, and no lead-core wicks (Safety and QC standards)",
   },
@@ -665,6 +669,7 @@ const SWEEP_ANSWERS: Record<string, Record<string, string>> = {
   },
   "br-logo": {
     b1: "Refined in Canva: Forest green, light green background, Since 2026",
+    b2: "Peculiar Candle Co. in DM Serif Display, Forest green",
   },
   "br-system": {
     b5: "Forest #2F4F46 on parchment",
@@ -682,6 +687,7 @@ const SWEEP_ANSWERS: Record<string, Record<string, string>> = {
   },
   "cm-costs": {
     m11: "Stripe: 2.9% + $0.30 per sale",
+    m12: "$15/hr (used in the pricing sheet)",
   },
   "cm-pricing": {
     m14: "About $9.75 Regular, $11.25 Large (recycled jar, labor at $15/hr)",
@@ -692,7 +698,7 @@ const SWEEP_ANSWERS: Record<string, Record<string, string>> = {
     sf1: "Live at peculiarcandle.com",
     sf2: "Built",
     sf3: "Reclaimed and Recycled pages",
-    sf4: "Library plus a scene page for each blend",
+    sf4: "Library plus a scene page for each blend, opened with an arrow",
     sf5: "Size, blend, and Clear / Color / Surprise Me",
     sf7: "About, Materials, and Care with FAQ",
     sf9: "Cart works on a phone",
@@ -700,6 +706,7 @@ const SWEEP_ANSWERS: Record<string, Record<string, string>> = {
   },
   "cm-waitlist": {
     sf10: "Footer form on the storefront",
+    n9: "Written in the storefront footer",
   },
   "cm-shipping": {
     k7: "USPS Ground Advantage, labels through Pirate Ship",
@@ -708,7 +715,7 @@ const SWEEP_ANSWERS: Record<string, Record<string, string>> = {
     k10: "Photo within 7 days, replacement or refund, no need to return it",
   },
   "la-golive": {
-    l13: "Returns form live; shipping policy and care card written",
+    l13: "Returns form live and tested; shipping policy and care card written",
   },
 };
 
@@ -757,5 +764,54 @@ function launchSweep(data: PeculiarData): PeculiarData {
       : row,
   );
 
-  return { ...data, tasks, decisions, economics: economicsRows };
+  // Not launch gates any more: prices and blends are set, so these wait until after launch.
+  const parked = tasks.map((task) => (PARK_AFTER_LAUNCH.includes(task.id) && task.status !== "COMPLETE" ? { ...task, afterLaunch: true } : task));
+
+  const blockers = data.blockers.map((item) => {
+    const done = SWEEP_BLOCKERS[item.id];
+    return done && item.title === done && !item.resolved ? { ...item, resolved: true } : item;
+  });
+
+  const questions = data.questions.map((item) => {
+    const change = SWEEP_QUESTIONS[item.id];
+    return change && item.question === change.was && item.status !== "COMPLETE" ? { ...item, status: "COMPLETE" as const, answer: item.answer || change.answer } : item;
+  });
+
+  const acquisitions = data.acquisitions.map((item) =>
+    item.id === "ac-fill" && item.status === "NEED" ? { ...item, status: "ORDERED" as const, details: item.details || "Honeycomb paper" } : item,
+  );
+
+  const documents = data.documents.map((item) => {
+    const url = SWEEP_DOCS[item.id];
+    return url && !item.url ? { ...item, url } : item;
+  });
+
+  return { ...data, tasks: parked, decisions, economics: economicsRows, blockers, questions, acquisitions, documents };
 }
+
+const PARK_AFTER_LAUNCH = ["la-interviews", "r1"];
+
+/** Blockers cleared Oct 6, matched on their original title. */
+const SWEEP_BLOCKERS: Record<string, string> = {
+  bl3: "Mystery vessel is untested with customers",
+  bl5: "Prices rest on estimates",
+};
+
+const SWEEP_QUESTIONS: Record<string, { was: string; answer: string }> = {
+  q4: {
+    was: "What price feels justified to the target customer?",
+    answer: "Set at Regular $32 and Large $40, about two-thirds margin. Revisit after the first month of sales.",
+  },
+  q8: {
+    was: "What cure age is required before a candle can be sold?",
+    answer: "At least 7 days; re-test hot throw at 14 (Safety and QC standards).",
+  },
+  q11: {
+    was: "What is the exact unused-candle return window?",
+    answer: "No returns on unburned candles unless something is wrong; damage reported with a photo within 7 days. Empty jars come back through Return to the Circle.",
+  },
+};
+
+const SWEEP_DOCS: Record<string, string> = {
+  "doc-safe": "https://claude.ai/code/artifact/5c0b50ab-d5ad-42dc-9add-c9b5f56f23d3",
+};
