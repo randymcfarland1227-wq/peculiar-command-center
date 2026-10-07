@@ -649,16 +649,34 @@ const SWEEP_ANSWERS: Record<string, Record<string, string>> = {
     c16: "25% of each sale, set on the Ledger",
   },
   "pl-wax": {
+    p2: "Not final: confirm in the test pours",
+    p3: "Not final: confirm in the test pours",
+    p4: "Not final: confirm in the test pours",
     p6: "At least 7 days; re-test hot throw at 14 (Safety and QC standards)",
   },
   "pl-vessels": {
+    p23: "Moving to the owner floor (backend)",
+    p26: "Old labels and glue come off in prep (QC checklist)",
+    p28: "Not needed for launch",
     p24: "No chips or cracks, labels and glue off, survives a warm-up with no craze, jar type has passed a burn test",
     p25: "Any chip or crack, crazing on warm-up, or too wide for a steady wick",
   },
+  "pl-fragrance": {
+    p12: "Starting blends set (Candle Lab sheet). Not final until tested",
+    p13: "Not final: record after the test pours",
+    p14: "Not final: record after the test pours",
+  },
+  "pl-wicks": {
+    p20: "Wood wicks chosen. Not final until burn tests",
+    p21: "Wood wicks chosen. Not final until burn tests",
+    p22: "Wood wicks chosen. Not final until burn tests",
+  },
   "sa-docs": {
     s1: "ASTM F2058, F2417, F2179, F1972, and no lead-core wicks (Safety and QC standards)",
+    s2: "Checklist in Safety and QC standards. Not final: download each sheet from CandleScience",
   },
   "sa-burn": {
+    s5: "Moving to the owner floor (backend)",
     s3: "Tests page, using the protocol in Safety and QC standards",
     s6: "Flame under 3 in, full melt pool by hour 4, glass side under about 140°F, no steady soot, burns calmly to 1/2 in",
   },
@@ -670,6 +688,7 @@ const SWEEP_ANSWERS: Record<string, Record<string, string>> = {
   "br-logo": {
     b1: "Refined in Canva: Forest green, light green background, Since 2026",
     b2: "Peculiar Candle Co. in DM Serif Display, Forest green",
+    b3: "Not final: small icon still to make",
   },
   "br-system": {
     b5: "Forest #2F4F46 on parchment",
@@ -683,6 +702,7 @@ const SWEEP_ANSWERS: Record<string, Record<string, string>> = {
     b11: "Done",
   },
   "br-pack": {
+    b12: "Not final: waits on the closure choice",
     b13: "Canva care card, 3.5 × 2 in, front and back",
   },
   "cm-costs": {
@@ -789,7 +809,7 @@ function launchSweep(data: PeculiarData): PeculiarData {
   return { ...data, tasks: parked, decisions, economics: economicsRows, blockers, questions, acquisitions, documents };
 }
 
-const PARK_AFTER_LAUNCH = ["la-interviews", "r1"];
+const PARK_AFTER_LAUNCH = ["la-interviews", "r1", "co-name"];
 
 /** Blockers cleared Oct 6, matched on their original title. */
 const SWEEP_BLOCKERS: Record<string, string> = {
