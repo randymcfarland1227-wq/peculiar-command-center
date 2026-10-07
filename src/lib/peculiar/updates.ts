@@ -13,6 +13,7 @@ const UPDATES: { id: string; apply: (data: PeculiarData) => PeculiarData }[] = [
   { id: "2026-10-05-supplies", apply: recordSupplies },
   { id: "2026-10-05-wicks-labels-research", apply: wicksLabelsResearch },
   { id: "2026-10-05-research-findings", apply: researchFindings },
+  { id: "2026-10-06-launch-sweep", apply: launchSweep },
 ];
 
 export function applyUpdates(data: PeculiarData): PeculiarData {
@@ -639,3 +640,198 @@ function researchFindings(data: PeculiarData): PeculiarData {
 
   return { ...data, questions, tasks, budget };
 }
+
+/** Fields finished on October 5–6, 2026: drafts, the storefront, the owner floor, and brand work. */
+const SWEEP_ANSWERS: Record<string, Record<string, string>> = {
+  "co-books": {
+    c14: "Owner floor Ledger (peculiar-floor), with CSV import and export",
+    c15: "Schedule C categories, from the bookkeeping draft",
+    c16: "25% of each sale, set on the Ledger",
+  },
+  "pl-wax": {
+    p2: "Not final: confirm in the test pours",
+    p3: "Not final: confirm in the test pours",
+    p4: "Not final: confirm in the test pours",
+    p6: "At least 7 days; re-test hot throw at 14 (Safety and QC standards)",
+  },
+  "pl-vessels": {
+    p23: "Moving to the owner floor (backend)",
+    p26: "Old labels and glue come off in prep (QC checklist)",
+    p28: "Not needed for launch",
+    p24: "No chips or cracks, labels and glue off, survives a warm-up with no craze, jar type has passed a burn test",
+    p25: "Any chip or crack, crazing on warm-up, or too wide for a steady wick",
+  },
+  "pl-fragrance": {
+    p12: "Starting blends set (Candle Lab sheet). Not final until tested",
+    p13: "Not final: record after the test pours",
+    p14: "Not final: record after the test pours",
+  },
+  "pl-wicks": {
+    p20: "Wood wicks chosen. Not final until burn tests",
+    p21: "Wood wicks chosen. Not final until burn tests",
+    p22: "Wood wicks chosen. Not final until burn tests",
+  },
+  "sa-docs": {
+    s1: "ASTM F2058, F2417, F2179, F1972, and no lead-core wicks (Safety and QC standards)",
+    s2: "Checklist in Safety and QC standards. Not final: download each sheet from CandleScience",
+  },
+  "sa-burn": {
+    s5: "Moving to the owner floor (backend)",
+    s3: "Tests page, using the protocol in Safety and QC standards",
+    s6: "Flame under 3 in, full melt pool by hour 4, glass side under about 140°F, no steady soot, burns calmly to 1/2 in",
+  },
+  "sa-release": {
+    s9: "YYMMDD-NN-V-B, e.g. 261012-05-R-1",
+    s10: "Glass, cured candle, and finish checks in Safety and QC standards",
+    s11: "Eight checks in Safety and QC standards, including insurance before the first sale",
+  },
+  "br-logo": {
+    b1: "Refined in Canva: Forest green, light green background, Since 2026",
+    b2: "Peculiar Candle Co. in DM Serif Display, Forest green",
+    b3: "Not final: small icon still to make",
+  },
+  "br-system": {
+    b5: "Forest #2F4F46 on parchment",
+    b6: "Playfair Display Italic, DM Serif Display, Josefin Sans Light, Montserrat Medium",
+    b7: "DM Serif Display, 01–06",
+  },
+  "br-labels": {
+    b8: "Done in Canva",
+    b9: "Done in Canva",
+    b10: "Done",
+    b11: "Done",
+  },
+  "br-pack": {
+    b12: "Not final: waits on the closure choice",
+    b13: "Canva care card, 3.5 × 2 in, front and back",
+  },
+  "cm-costs": {
+    m11: "Stripe: 2.9% + $0.30 per sale",
+    m12: "$15/hr (used in the pricing sheet)",
+  },
+  "cm-pricing": {
+    m14: "About $9.75 Regular, $11.25 Large (recycled jar, labor at $15/hr)",
+    m16: "About 66% Regular, 68% Large after card fees",
+    m15: "Regular $32, Large $40",
+  },
+  "cm-store": {
+    sf1: "Live at peculiarcandle.com",
+    sf2: "Built",
+    sf3: "Reclaimed and Recycled pages",
+    sf4: "Library plus a scene page for each blend, opened with an arrow",
+    sf5: "Size, blend, and Clear / Color / Surprise Me",
+    sf7: "About, Materials, and Care with FAQ",
+    sf9: "Cart works on a phone",
+    sf12: "Stripe Checkout, live",
+  },
+  "cm-waitlist": {
+    sf10: "Footer form on the storefront",
+    n9: "Written in the storefront footer",
+  },
+  "cm-shipping": {
+    k7: "USPS Ground Advantage, labels through Pirate Ship",
+    k8: "$8 flat, free over $75, free Baltimore pickup",
+    k9: "June–September, may hold orders to places over 90°F; ship early in the week",
+    k10: "Photo within 7 days, replacement or refund, no need to return it",
+  },
+  "la-golive": {
+    l13: "Returns form live and tested; shipping policy and care card written",
+  },
+};
+
+const SWEEP_DECISIONS: Decision[] = [
+  {
+    id: "d24",
+    date: "2026-10-06",
+    decision: "Regular is $32 and Large is $40, in either glass.",
+    category: "Pricing",
+    status: "DECIDED",
+    reason: "A wider gap makes Large feel like a step up. Both keep about two-thirds margin.",
+    evidence: "Pricing draft sheet, from real wax, oil, jar, and wick costs.",
+    revisitWhen: "After customer price reactions or the first month of sales.",
+    workstreams: ["commerce"],
+  },
+  {
+    id: "d25",
+    date: "2026-10-06",
+    decision: "Shipping is $8 flat per order, free over $75, by USPS Ground Advantage.",
+    category: "Policy",
+    status: "DECIDED",
+    reason: "Two Large candles ship free, which nudges orders up to two or three.",
+    evidence: "Shipping policy draft. Label costs are estimates until a box is weighed.",
+    revisitWhen: "Once real packed weights and zone prices are in.",
+    workstreams: ["commerce"],
+  },
+];
+
+function launchSweep(data: PeculiarData): PeculiarData {
+  const tasks = data.tasks.map((task) => {
+    const answers = SWEEP_ANSWERS[task.id];
+    if (!answers || !task.steps) return task;
+    const steps = task.steps.map((item) =>
+      answers[item.id] && !item.value.trim() ? { ...item, value: answers[item.id] } : item,
+    );
+    return settle({ ...task, steps });
+  });
+
+  const known = new Set(data.decisions.map((item) => item.id));
+  const decisions = [...data.decisions, ...SWEEP_DECISIONS.filter((item) => !known.has(item.id))];
+
+  // Large moved from $38 to $40; only an untouched estimate changes.
+  const economicsRows = data.economics.map((row) =>
+    row.size === "Large" && row.retail.source === "ESTIMATE" && row.retail.amount === 38
+      ? { ...row, retail: { amount: 40, source: "ACTUAL" as const } }
+      : row,
+  );
+
+  // Not launch gates any more: prices and blends are set, so these wait until after launch.
+  const parked = tasks.map((task) => (PARK_AFTER_LAUNCH.includes(task.id) && task.status !== "COMPLETE" ? { ...task, afterLaunch: true } : task));
+
+  const blockers = data.blockers.map((item) => {
+    const done = SWEEP_BLOCKERS[item.id];
+    return done && item.title === done && !item.resolved ? { ...item, resolved: true } : item;
+  });
+
+  const questions = data.questions.map((item) => {
+    const change = SWEEP_QUESTIONS[item.id];
+    return change && item.question === change.was && item.status !== "COMPLETE" ? { ...item, status: "COMPLETE" as const, answer: item.answer || change.answer } : item;
+  });
+
+  const acquisitions = data.acquisitions.map((item) =>
+    item.id === "ac-fill" && item.status === "NEED" ? { ...item, status: "ORDERED" as const, details: item.details || "Honeycomb paper" } : item,
+  );
+
+  const documents = data.documents.map((item) => {
+    const url = SWEEP_DOCS[item.id];
+    return url && !item.url ? { ...item, url } : item;
+  });
+
+  return { ...data, tasks: parked, decisions, economics: economicsRows, blockers, questions, acquisitions, documents };
+}
+
+const PARK_AFTER_LAUNCH = ["la-interviews", "r1", "co-name"];
+
+/** Blockers cleared Oct 6, matched on their original title. */
+const SWEEP_BLOCKERS: Record<string, string> = {
+  bl3: "Mystery vessel is untested with customers",
+  bl5: "Prices rest on estimates",
+};
+
+const SWEEP_QUESTIONS: Record<string, { was: string; answer: string }> = {
+  q4: {
+    was: "What price feels justified to the target customer?",
+    answer: "Set at Regular $32 and Large $40, about two-thirds margin. Revisit after the first month of sales.",
+  },
+  q8: {
+    was: "What cure age is required before a candle can be sold?",
+    answer: "At least 7 days; re-test hot throw at 14 (Safety and QC standards).",
+  },
+  q11: {
+    was: "What is the exact unused-candle return window?",
+    answer: "No returns on unburned candles unless something is wrong; damage reported with a photo within 7 days. Empty jars come back through Return to the Circle.",
+  },
+};
+
+const SWEEP_DOCS: Record<string, string> = {
+  "doc-safe": "https://claude.ai/code/artifact/5c0b50ab-d5ad-42dc-9add-c9b5f56f23d3",
+};
