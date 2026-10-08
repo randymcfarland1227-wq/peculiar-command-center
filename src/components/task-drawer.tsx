@@ -4,6 +4,7 @@ import { HowList } from "@/components/step-track";
 import { DeleteButton, Field, SelectInput, TextInput, AreaInput, GhostButton, SolidButton } from "@/components/fields";
 import { PRIORITIES, STATUSES, WORKSTREAMS, WORKSTREAM_LABEL, LAUNCH_AREAS } from "@/lib/peculiar/types";
 import { usePeculiar } from "@/lib/peculiar/store";
+import { isPostLaunch } from "@/lib/peculiar/status";
 
 export function TaskDrawer() {
   const draft = usePeculiar((s) => s.draft);
@@ -107,6 +108,12 @@ export function TaskDrawer() {
               </SelectInput>
             </Field>
           </div>
+          {isPostLaunch(record.status) ? (
+            <p className="border-l-2 border-forest bg-sheet px-3 py-2 text-sm leading-relaxed text-ink">
+              Post launch: counted as done for launch and kept off the active lists. Find it under Post launch on the
+              dashboard or in any task list. Change the status to reopen it, or check it off when it is fully done.
+            </p>
+          ) : null}
           {!draft && task?.steps?.length ? (
             <div className="grid gap-3 border border-line bg-sheet p-3">
               <p className="text-xs tracking-widest text-olive">Fields, in order</p>

@@ -4,6 +4,7 @@ import { Field, PageIntro, SectionTitle, SolidButton, TextInput, AreaInput, Dele
 import { StatusChip } from "@/components/status-chip";
 import { uid, usePeculiar } from "@/lib/peculiar/store";
 import { STATUSES, type ResearchQuestion, type TaskStatus } from "@/lib/peculiar/types";
+import { isClosed } from "@/lib/peculiar/status";
 
 export const Route = createFileRoute("/research")({
   component: ResearchPage,
@@ -66,7 +67,7 @@ function ResearchPage() {
           <SolidButton type="submit">Save question</SolidButton>
         </form>
       ) : null}
-      <SectionTitle title="Tracker" aside={`${questions.filter((item) => item.status !== "DECIDED" && item.status !== "COMPLETE").length} still open`} />
+      <SectionTitle title="Tracker" aside={`${questions.filter((item) => item.status !== "DECIDED" && !isClosed(item.status)).length} still open`} />
       <ul className="flex flex-col gap-3">
         {questions.map((item) => (
           <li key={item.id} className="border border-line bg-sheet p-4">

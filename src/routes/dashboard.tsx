@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check } from "lucide-react";
+import { Check, Clock } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { countComplete, stepProgress, usePeculiar } from "@/lib/peculiar/store";
+import { isClosed, isPostLaunch } from "@/lib/peculiar/status";
 import { WORKSTREAM_LABEL, type Decision, type Experiment, type Task } from "@/lib/peculiar/types";
 import { DecisionChip, StatusChip } from "@/components/status-chip";
 import { DeleteButton } from "@/components/fields";
@@ -27,6 +28,7 @@ function Dashboard() {
   const removeSupplier = usePeculiar((s) => s.removeSupplier);
 
   const parked = tasks.filter((task) => task.afterLaunch);
+  const postLaunch = tasks.filter((task) => !task.afterLaunch && isPostLaunch(task.status));
   const company = tasks.filter((task) => task.workstream === "company");
   const research = tasks.filter((task) => task.workstream === "research");
   const lab = tasks.filter((task) => task.workstream === "product-lab");
@@ -76,7 +78,7 @@ function Dashboard() {
         </div>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
           {view === "dashboard"
-            ? "The work still to do. Each percent is tasks marked complete, divided by every task in that group."
+            ? "The work still to do. Each percent is tasks marked complete or post launch, divided by every task in that group."
             : "What you have decided, measured, and sourced so far. Nothing here is a task."}
         </p>
       </header>
@@ -96,7 +98,7 @@ function Dashboard() {
             <TaskBlock title="Commerce" href="/commerce" tasks={commerce} />
             <TaskBlock title="Launch" href="/launch" tasks={launch} />
             <article className="border border-line bg-sheet p-4">
-              <BlockHead title="Content" href="/content" aside={`${content.filter((item) => item.status === "COMPLETE").length} of ${content.length}`} />
+              <BlockHead title="Content" href="/content" aside={`${content.filter((item) => isClosed(item.status)).length} of ${content.length}`} />
               <ul>
                 {content.map((item) => (
                   <li key={item.id} className="flex items-start justify-between gap-3 border-t border-line py-2 text-sm">
@@ -108,6 +110,7 @@ function Dashboard() {
             </article>
           </Column>
         </div>
+        {postLaunch.length ? <PostLaunch tasks={postLaunch} /> : null}
         {parked.length ? <AfterLaunch tasks={parked} /> : null}
         </>
       ) : (
@@ -229,7 +232,7 @@ function Column({
   children,
 }: {
   title: string;
-  count: { done: number; total: number; percent: number };
+  count: { done: number; total: number; postLaunch: number; percent: number };
   children: ReactNode;
 }) {
   return (
@@ -244,6 +247,7 @@ function Column({
         </div>
         <p className="mt-2 text-xs tracking-widest text-muted">
           {count.done} of {count.total} complete
+          {count.postLaunch ? ` · ${count.postLaunch} post launch` : ""}
         </p>
       </div>
       <div className="flex flex-col gap-3">{children}</div>
@@ -280,6 +284,60 @@ function TaskBlock({ title, href, tasks: all }: { title: string; href: string; t
         </div>
       ))}
     </article>
+  );
+}
+
+/**
+ * Tasks marked Post launch: tentatively complete, so they count as done above and leave every
+ * active list. Closed by default; each can be reopened or checked off as fully complete.
+ */
+function PostLaunch({ tasks }: { tasks: Task[] }) {
+  const updateTask = usePeculiar((s) => s.updateTask);
+  const setOpenTask = usePeculiar((s) => s.setOpenTask);
+  const groups = [...new Set(tasks.map((task) => task.workstream))];
+  return (
+    <details className="mt-8 border border-dashed border-forest bg-sheet">
+      <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-4 py-3">
+        <span className="font-serif text-xl">Post launch</span>
+        <span className="text-xs tracking-widest text-muted">{tasks.length} tentatively done</span>
+      </summary>
+      <div className="border-t border-line px-4 pb-4">
+        <p className="mt-3 text-sm text-muted">
+          Counted as done for launch and kept off the active lists. Check one off when it is fully done, or reopen it.
+        </p>
+        {groups.map((workstream) => (
+          <div key={workstream} className="mt-4">
+            <h3 className="text-xs tracking-widest text-olive">{WORKSTREAM_LABEL[workstream]}</h3>
+            <ul>
+              {tasks
+                .filter((task) => task.workstream === workstream)
+                .map((task) => (
+                  <li key={task.id} className="flex items-center gap-2 border-t border-line">
+                    <button type="button" onClick={() => setOpenTask(task.id)} className="min-h-11 flex-1 py-2 text-left text-sm">
+                      {task.title}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateTask(task.id, { status: "IN PROGRESS" })}
+                      className="h-11 shrink-0 border border-line bg-paper px-3 text-sm"
+                    >
+                      Reopen
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Complete ${task.title}`}
+                      onClick={() => updateTask(task.id, { status: "COMPLETE" })}
+                      className="flex h-11 w-11 shrink-0 items-center justify-center border border-forest bg-paper text-forest"
+                    >
+                      <Check className="size-4" />
+                    </button>
+                  </li>
+                ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </details>
   );
 }
 
@@ -339,6 +397,7 @@ function TaskLine({ task }: { task: Task }) {
   const removeTask = usePeculiar((s) => s.removeTask);
   const setOpenTask = usePeculiar((s) => s.setOpenTask);
   const done = task.status === "COMPLETE";
+  const parked = isPostLaunch(task.status);
   return (
     <li className="flex items-center gap-2 border-t border-line">
       <button
@@ -347,13 +406,15 @@ function TaskLine({ task }: { task: Task }) {
         onClick={() => updateTask(task.id, { status: done ? "IN PROGRESS" : "COMPLETE" })}
         className={cn(
           "flex h-11 w-11 shrink-0 items-center justify-center border",
-          done ? "border-forest bg-forest text-paper" : "border-line bg-paper",
+          done ? "border-forest bg-forest text-paper" : parked ? "border-dashed border-forest bg-paper text-forest" : "border-line bg-paper",
         )}
+        title={parked ? "Post launch. Check to mark it fully complete." : undefined}
       >
-        <Check className="size-4" />
+        {parked ? <Clock className="size-4" /> : <Check className="size-4" />}
       </button>
-      <button type="button" onClick={() => setOpenTask(task.id)} className={cn("flex-1 py-2 text-left text-sm", done && "text-muted line-through")}>
+      <button type="button" onClick={() => setOpenTask(task.id)} className={cn("flex-1 py-2 text-left text-sm", done && "text-muted line-through", parked && "text-muted")}>
         {task.title}
+        {parked ? <span className="ml-2 whitespace-nowrap text-xs tracking-widest text-forest">Post launch</span> : null}
       </button>
       <DeleteButton compact label={`Delete ${task.title}`} onConfirm={() => removeTask(task.id)} />
     </li>
@@ -366,19 +427,24 @@ function StepTile({ task }: { task: Task }) {
   const setOpenTask = usePeculiar((s) => s.setOpenTask);
   const progress = stepProgress(task);
   const done = task.status === "COMPLETE";
-  const next = progress.next && !done ? `Next: ${progress.next.label}` : undefined;
+  const parked = isPostLaunch(task.status);
+  const next = parked ? "Post launch" : progress.next && !done ? `Next: ${progress.next.label}` : undefined;
   return (
-    <li className={cn("flex h-11 items-stretch border", done ? "border-forest" : "border-line bg-paper")}>
+    <li className={cn("flex h-11 items-stretch border", done ? "border-forest" : parked ? "border-dashed border-forest bg-paper" : "border-line bg-paper")}>
       <button
         type="button"
         aria-label={done ? `Reopen ${task.title}` : `Complete ${task.title}`}
         onClick={() => updateTask(task.id, { status: done ? "IN PROGRESS" : "COMPLETE" })}
-        className={cn("flex w-10 items-center justify-center border-r", done ? "border-forest bg-forest text-paper" : "border-line bg-sheet")}
+        className={cn(
+          "flex w-10 items-center justify-center border-r",
+          done ? "border-forest bg-forest text-paper" : parked ? "border-dashed border-forest bg-sheet text-forest" : "border-line bg-sheet",
+        )}
       >
-        <Check className="size-4" />
+        {parked ? <Clock className="size-4" /> : <Check className="size-4" />}
       </button>
-      <button type="button" title={next} onClick={() => setOpenTask(task.id)} className={cn("px-3 text-left text-sm", done && "text-muted line-through")}>
+      <button type="button" title={next} onClick={() => setOpenTask(task.id)} className={cn("px-3 text-left text-sm", done && "text-muted line-through", parked && "text-muted")}>
         {task.title}
+        {parked ? <span className="ml-2 whitespace-nowrap text-xs tracking-widest text-forest">Post launch</span> : null}
       </button>
     </li>
   );

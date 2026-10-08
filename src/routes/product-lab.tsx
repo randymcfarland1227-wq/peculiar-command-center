@@ -4,7 +4,7 @@ import { AreaInput, DeleteButton, Field, Note, PageIntro, SectionTitle, TextInpu
 import { StatusChip } from "@/components/status-chip";
 import { StepTrackRow } from "@/components/step-track";
 import { TaskList } from "@/components/task-list";
-import { usePeculiar } from "@/lib/peculiar/store";
+import { countComplete, usePeculiar } from "@/lib/peculiar/store";
 import { STATUSES } from "@/lib/peculiar/types";
 
 export const Route = createFileRoute("/product-lab")({
@@ -26,6 +26,7 @@ function ProductLabPage() {
   const decisions = allDecisions.filter((item) => item.workstreams.includes("product-lab"));
   const active = tasks.filter((task) => !task.afterLaunch);
   const tracks = active.filter((task) => task.steps?.length && task.section !== "Safety");
+  const trackCount = countComplete(tracks);
   const [openSlot, setOpenSlot] = useState("01");
 
   return (
@@ -38,7 +39,7 @@ function ProductLabPage() {
       />
 
       <section className="mb-10">
-        <SectionTitle title="Build sequence" aside={`${tracks.filter((task) => task.status === "COMPLETE").length} of ${tracks.length} complete`} />
+        <SectionTitle title="Build sequence" aside={`${trackCount.done} of ${trackCount.total} complete${trackCount.postLaunch ? ` · ${trackCount.postLaunch} post launch` : ""}`} />
         <Note>Left to right is build order. Fill each task's fields top to bottom. A task completes when every field has an answer, or when you check it off.</Note>
         <div className="mt-4">
           <StepTrackRow tasks={tracks} numbered />

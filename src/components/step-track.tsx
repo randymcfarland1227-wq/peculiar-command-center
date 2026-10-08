@@ -1,20 +1,21 @@
-import { Check } from "lucide-react";
+import { Check, Clock } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { prettyDate } from "@/lib/peculiar/format";
 import { stepProgress, usePeculiar } from "@/lib/peculiar/store";
+import { isClosed, isPostLaunch } from "@/lib/peculiar/status";
 import type { Task } from "@/lib/peculiar/types";
 import { PriorityChip, StatusChip } from "@/components/status-chip";
 import { DeleteButton } from "@/components/fields";
 
-/** Task ids named in a stepped task's dependencies that are not complete yet. */
+/** Task ids named in a stepped task's dependencies that are not complete (or post launch) yet. */
 export function useWaitingOn(task: Task) {
   const tasks = usePeculiar((s) => s.tasks);
   const ids = task.dependencies
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
-  return tasks.filter((item) => ids.includes(item.id) && item.status !== "COMPLETE");
+  return tasks.filter((item) => ids.includes(item.id) && !isClosed(item.status));
 }
 
 /** A component task shown as one column card. Its fields run top to bottom, in order. */
@@ -29,19 +30,21 @@ export function StepTrack({ task, index }: { task: Task; index?: number }) {
   const steps = task.steps ?? [];
   const nextIndex = progress.next ? steps.indexOf(progress.next) : -1;
   const done = task.status === "COMPLETE";
+  const parked = isPostLaunch(task.status);
   const [howOpen, setHowOpen] = useState<string | null>(null);
 
   return (
     <article
       className={cn(
         "flex w-72 shrink-0 snap-start flex-col border border-line bg-sheet p-4 lg:w-auto lg:min-w-44 lg:flex-1",
-        waitingOn.length > 0 && !done && "bg-paper",
+        waitingOn.length > 0 && !done && !parked && "bg-paper",
+        parked && "border-dashed border-forest",
       )}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           {index !== undefined ? <span className="block font-serif text-2xl tabular-nums text-olive">{String(index).padStart(2, "0")}</span> : null}
-          <button type="button" onClick={() => setOpenTask(task.id)} className={cn("text-left font-serif text-2xl", done && "text-muted line-through")}>
+          <button type="button" onClick={() => setOpenTask(task.id)} className={cn("text-left font-serif text-2xl", done && "text-muted line-through", parked && "text-muted")}>
             {task.title}
           </button>
         </div>
@@ -52,10 +55,11 @@ export function StepTrack({ task, index }: { task: Task; index?: number }) {
             onClick={() => updateTask(task.id, { status: done ? "IN PROGRESS" : "COMPLETE" })}
             className={cn(
               "flex h-11 w-11 shrink-0 items-center justify-center border",
-              done ? "border-forest bg-forest text-paper" : "border-line bg-paper",
+              done ? "border-forest bg-forest text-paper" : parked ? "border-dashed border-forest bg-paper text-forest" : "border-line bg-paper",
             )}
+            title={parked ? "Post launch. Check to mark it fully complete." : undefined}
           >
-            <Check className="size-4" />
+            {parked ? <Clock className="size-4" /> : <Check className="size-4" />}
           </button>
           <DeleteButton compact label={`Delete ${task.title}`} onConfirm={() => removeTask(task.id)} />
         </div>
@@ -70,7 +74,7 @@ export function StepTrack({ task, index }: { task: Task; index?: number }) {
           <span key={item.id} className={cn("h-1 flex-1", item.value.trim() ? "bg-forest" : "bg-cream")} />
         ))}
       </div>
-      {waitingOn.length > 0 && !done ? (
+      {waitingOn.length > 0 && !done && !parked ? (
         <p className="mt-3 text-xs tracking-widest text-olive">Starts after {waitingOn.map((item) => item.title).join(" · ")}</p>
       ) : null}
       {task.notes ? <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted">{task.notes}</p> : null}

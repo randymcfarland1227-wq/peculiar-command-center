@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageIntro, SectionTitle } from "@/components/fields";
 import { TaskList } from "@/components/task-list";
 import { usePeculiar } from "@/lib/peculiar/store";
+import { isClosed } from "@/lib/peculiar/status";
 import { LAUNCH_AREAS } from "@/lib/peculiar/types";
 
 export const Route = createFileRoute("/launch")({
@@ -16,7 +17,8 @@ function LaunchPage() {
 
   const gates = LAUNCH_AREAS.map((area) => {
     const items = tasks.filter((task) => task.launchArea === area && !task.afterLaunch);
-    const done = items.filter((task) => task.status === "COMPLETE").length;
+    // Post launch work no longer holds a gate open.
+    const done = items.filter((task) => isClosed(task.status)).length;
     return { area, done, total: items.length };
   });
 

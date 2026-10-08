@@ -10,6 +10,8 @@ const statusClass: Record<TaskStatus, string> = {
   DECIDED: "bg-forest text-paper",
   ORDERED: "bg-olive text-paper",
   COMPLETE: "bg-forest text-paper",
+  // Dashed Forest outline: done for launch, but only tentatively, so never mistaken for COMPLETE.
+  "POST LAUNCH": "border border-dashed border-forest bg-sheet text-forest",
   BLOCKED: "bg-olive text-paper",
 };
 
