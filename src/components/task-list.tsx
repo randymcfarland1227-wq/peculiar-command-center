@@ -141,7 +141,7 @@ export function TaskList({ tasks, empty }: { tasks: Task[]; empty?: string }) {
                         <span className="text-xs tracking-widest text-muted">{WORKSTREAM_LABEL[task.workstream]}</span>
                         {task.due ? <span className="text-xs tracking-widest text-muted">Due {prettyDate(task.due)}</span> : null}
                       </div>
-                      {task.notes ? <p className="mt-2 text-sm leading-relaxed text-muted">{task.notes}</p> : null}
+                      {task.notes ? <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted">{task.notes}</p> : null}
                     </div>
                     <DeleteButton compact className="mt-1" label={`Delete ${task.title}`} onConfirm={() => removeTask(task.id)} />
                   </li>

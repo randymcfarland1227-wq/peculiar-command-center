@@ -1,4 +1,5 @@
 import { GUIDES } from "./guides";
+import { addTaskIfMissing, stripeIntegrationTask } from "./added-tasks";
 import { AFTER_LAUNCH_IDS, CUT_TASK_ALIASES, CUT_TASK_IDS, combinedTasks, economics, scents, skus } from "./seed";
 import type { Decision, Experiment, PeculiarData, ResearchQuestion, Priority, SizeModel, Task, TaskStatus, TaskStep } from "./types";
 
@@ -13,6 +14,7 @@ const UPDATES: { id: string; apply: (data: PeculiarData) => PeculiarData }[] = [
   { id: "2026-10-05-supplies", apply: recordSupplies },
   { id: "2026-10-05-wicks-labels-research", apply: wicksLabelsResearch },
   { id: "2026-10-05-research-findings", apply: researchFindings },
+  { id: "2026-10-08-stripe-integration-task", apply: addStripeTask },
 ];
 
 export function applyUpdates(data: PeculiarData): PeculiarData {
@@ -644,4 +646,9 @@ function researchFindings(data: PeculiarData): PeculiarData {
   }
 
   return { ...data, questions, tasks, budget };
+}
+
+/** Adds the Stripe integration task (due Fri Oct 9) next to Storefront. Runs once; a deleted copy stays deleted. */
+function addStripeTask(data: PeculiarData): PeculiarData {
+  return { ...data, tasks: addTaskIfMissing(data.tasks, stripeIntegrationTask(), "cm-store") };
 }
