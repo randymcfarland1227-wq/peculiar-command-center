@@ -29,7 +29,10 @@ export type LifeHubTask = {
   id: string;
   title: string;
   detail?: string;
+  /** "open" | "blocked" | "done" — done rows let Life Hub count the completion toward Balance. */
   status?: string;
+  /** ISO time it was completed (done rows only). */
+  completedAt?: string;
   due?: string;
   starred?: boolean;
   originUrl?: string;
@@ -74,6 +77,28 @@ function isOpenTask(task: Task) {
   return task.status !== "COMPLETE" && !task.afterLaunch;
 }
 
+/** Completed tasks are reported back this many days so Life Hub's month view can count them. */
+const DONE_LOOKBACK_DAYS = 31;
+
+/**
+ * When a task was completed, as an ISO time. Older saves only kept a date (written in UTC),
+ * so those read as midday local time, never later than now.
+ */
+export function completedAtOf(task: Pick<Task, "completedAt" | "completedDate">, now = new Date()): string | undefined {
+  if (task.completedAt && !Number.isNaN(Date.parse(task.completedAt))) return task.completedAt;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(task.completedDate || "");
+  if (!m) return undefined;
+  const noon = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12);
+  return new Date(Math.min(noon.getTime(), now.getTime())).toISOString();
+}
+
+function recentlyDone(task: Task, now: Date) {
+  if (task.status !== "COMPLETE" || task.afterLaunch) return undefined;
+  const at = completedAtOf(task, now);
+  if (!at) return undefined;
+  return now.getTime() - Date.parse(at) <= DONE_LOOKBACK_DAYS * 86_400_000 ? at : undefined;
+}
+
 function taskStatusLabel(task: Task) {
   if (task.status === "BLOCKED" || task.status === "WAITING") return "blocked";
   return "open";
@@ -103,6 +128,14 @@ export function buildCandleSnapshot(data: CandleBridgeData): LifeHubSnapshot {
     starred: Boolean(stars[task.id]),
     originUrl: ORIGIN_URL,
   }));
+  // Finished tasks ride along as done so Life Hub records them (a task that just vanishes
+  // could have been deleted or parked, so Life Hub never counts a disappearance).
+  const now = new Date();
+  for (const task of data.tasks) {
+    const completedAt = recentlyDone(task, now);
+    if (!completedAt) continue;
+    tasks.push({ id: task.id, title: task.title, status: "done", completedAt, originUrl: ORIGIN_URL });
+  }
 
   const featured: LifeHubFeatured[] = open
     .filter((task) => stars[task.id])

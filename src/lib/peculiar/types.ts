@@ -119,6 +119,8 @@ export interface Task {
   cost: string;
   owner: string;
   completedDate: string;
+  /** Exact moment it was marked complete (ISO). Older saves only have completedDate. */
+  completedAt?: string;
   relatedExperiment: string;
   relatedSupplier: string;
   relatedDocument: string;

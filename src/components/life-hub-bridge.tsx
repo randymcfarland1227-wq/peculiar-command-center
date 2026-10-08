@@ -46,9 +46,21 @@ export function LifeHubBridge() {
       postCandleSnapshot(sliceData());
     }
 
+    // Life Hub keeps this page loaded in a hidden frame. When the Candle tab saves a change
+    // (like completing a task), reload it here so the next snapshot reports it.
+    const framed = window.parent !== window;
+    const onStorage = (event: StorageEvent) => {
+      if (!framed) return;
+      if (event.key === null || event.key === usePeculiar.persist.getOptions().name) {
+        void usePeculiar.persist.rehydrate();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+
     return () => {
       detach();
       unsubHydration();
+      window.removeEventListener("storage", onStorage);
     };
   }, []);
 

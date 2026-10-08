@@ -114,8 +114,10 @@ function withComplete(task: Task, patch: Partial<Task>): Task {
   const next = { ...task, ...patch };
   if (patch.status === "COMPLETE") {
     next.completedDate = task.completedDate || today();
+    next.completedAt = task.status === "COMPLETE" ? task.completedAt : task.completedAt || new Date().toISOString();
   } else if (patch.status) {
     next.completedDate = "";
+    next.completedAt = undefined;
   }
   return next;
 }

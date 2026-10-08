@@ -49,7 +49,13 @@ function statusFromSteps(current: TaskStatus, steps: TaskStep[]): TaskStatus {
 
 function settle(task: Task): Task {
   const status = statusFromSteps(task.status, task.steps ?? []);
-  return { ...task, status, completedDate: status === "COMPLETE" ? task.completedDate || today() : "" };
+  const done = status === "COMPLETE";
+  return {
+    ...task,
+    status,
+    completedDate: done ? task.completedDate || today() : "",
+    completedAt: done ? task.completedAt || (task.status === "COMPLETE" ? undefined : new Date().toISOString()) : undefined,
+  };
 }
 
 const RANK: Record<Priority, number> = { NOW: 0, NEXT: 1, LATER: 2 };
