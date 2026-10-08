@@ -404,6 +404,16 @@ function mergeScents(saved: Scent[] | undefined, fresh: Scent[]): Scent[] {
   });
 }
 
+/**
+ * Another tab — or Life Hub bringing in a newer copy from Randy's other device through its backup —
+ * changed the saved studio data. Reload it, so this copy never writes older data back over it.
+ */
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key === PECULIAR_STORAGE_KEY && event.newValue) void usePeculiar.persist.rehydrate();
+  });
+}
+
 /** Saves straight after loading when a one-time update ran, so other tabs and Life Hub see it. */
 export function saveAppliedUpdates() {
   try {
