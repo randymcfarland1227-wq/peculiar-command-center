@@ -3,6 +3,7 @@ import { Menu, Plus, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { WORKSTREAM_LABEL, type Workstream } from "@/lib/peculiar/types";
+import { isPostLaunch } from "@/lib/peculiar/status";
 import { usePeculiar, PECULIAR_STORAGE_KEY, saveAppliedUpdates } from "@/lib/peculiar/store";
 import { LifeHubBridge } from "@/components/life-hub-bridge";
 import { TaskDrawer } from "@/components/task-drawer";
@@ -198,7 +199,10 @@ function SearchDialog({ onClose }: { onClose: () => void }) {
     const items: { href: string; label: string; meta: string }[] = [];
     const hit = (text: string) => !q || text.toLowerCase().includes(q);
     for (const task of tasks) {
-      if (hit(task.title)) items.push({ href: "/dashboard", label: task.title, meta: `Task · ${WORKSTREAM_LABEL[task.workstream]}` });
+      if (hit(task.title)) {
+        const meta = `Task · ${WORKSTREAM_LABEL[task.workstream]}${isPostLaunch(task.status) ? " · Post launch" : ""}`;
+        items.push({ href: "/dashboard", label: task.title, meta });
+      }
     }
     for (const decision of decisions) {
       if (hit(decision.decision)) items.push({ href: "/decisions", label: decision.decision, meta: "Decision" });

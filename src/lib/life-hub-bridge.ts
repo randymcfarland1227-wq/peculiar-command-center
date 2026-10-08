@@ -1,6 +1,7 @@
 /** Life Hub postMessage bridge — source id `candle`. See frontier LIFE_HUB.md. */
 
 import { WORKSTREAM_LABEL, type PeculiarData, type Task } from "@/lib/peculiar/types";
+import { isClosed } from "@/lib/peculiar/status";
 
 /** Allowed Life Hub parent origins (GitHub Pages primary + legacy Worker). */
 export const LIFE_HUB_ORIGINS = [
@@ -74,7 +75,7 @@ export function setCandleStarred(id: string, starred: boolean) {
 }
 
 function isOpenTask(task: Task) {
-  return task.status !== "COMPLETE" && !task.afterLaunch;
+  return !isClosed(task.status) && !task.afterLaunch;
 }
 
 /** Completed tasks are reported back this many days so Life Hub's month view can count them. */

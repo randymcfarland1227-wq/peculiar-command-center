@@ -428,26 +428,5 @@ export function stepProgress(task: Task) {
   return { done, total: steps.length, next };
 }
 
-/** Done out of total, leaving out tasks parked until after launch. */
-export function countComplete(all: Task[]) {
-  const tasks = all.filter((task) => !task.afterLaunch);
-  const total = tasks.length;
-  const done = tasks.filter((task) => task.status === "COMPLETE").length;
-  return { done, total, percent: total ? Math.round((done / total) * 100) : 0 };
-}
-
-export function nextActions(tasks: Task[], limit = 5) {
-  const rank = { NOW: 0, NEXT: 1, LATER: 2 };
-  return tasks
-    .filter((task) => task.status !== "COMPLETE" && task.priority !== "LATER" && !task.afterLaunch)
-    .slice()
-    .sort((a, b) => {
-      const byPriority = rank[a.priority] - rank[b.priority];
-      if (byPriority !== 0) return byPriority;
-      if (a.due && b.due) return a.due.localeCompare(b.due);
-      if (a.due) return -1;
-      if (b.due) return 1;
-      return a.title.localeCompare(b.title);
-    })
-    .slice(0, limit);
-}
+// Counting rules live in status.ts so they can be tested without the store.
+export { countComplete, nextActions } from "./status";

@@ -7,6 +7,8 @@ export const STATUSES = [
   "DECIDED",
   "ORDERED",
   "COMPLETE",
+  /** Can wait until after launch: tentatively complete, off every active list. See status.ts. */
+  "POST LAUNCH",
   "BLOCKED",
 ] as const;
 export type TaskStatus = (typeof STATUSES)[number];
