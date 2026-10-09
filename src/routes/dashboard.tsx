@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Clock } from "lucide-react";
+import { Check, Clock, Lock } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { countComplete, stepProgress, usePeculiar } from "@/lib/peculiar/store";
@@ -7,6 +7,7 @@ import { isClosed, isPostLaunch } from "@/lib/peculiar/status";
 import { WORKSTREAM_LABEL, type Decision, type Experiment, type Task } from "@/lib/peculiar/types";
 import { DecisionChip, StatusChip } from "@/components/status-chip";
 import { DeleteButton } from "@/components/fields";
+import { unlockText, useTaskGate } from "@/components/task-gate";
 
 export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
@@ -36,9 +37,9 @@ function Dashboard() {
   const commerce = tasks.filter((task) => task.workstream === "commerce");
   const launch = tasks.filter((task) => task.workstream === "launch");
 
-  const operate = countComplete([...company, ...research]);
-  const make = countComplete([...lab, ...brand]);
-  const sell = countComplete([...commerce, ...launch]);
+  const operate = countComplete([...company, ...research], tasks);
+  const make = countComplete([...lab, ...brand], tasks);
+  const sell = countComplete([...commerce, ...launch], tasks);
 
   const [view, setView] = useState<"dashboard" | "data">("dashboard");
   useEffect(() => {
@@ -232,7 +233,7 @@ function Column({
   children,
 }: {
   title: string;
-  count: { done: number; total: number; postLaunch: number; percent: number };
+  count: ReturnType<typeof countComplete>;
   children: ReactNode;
 }) {
   return (
@@ -246,7 +247,9 @@ function Column({
           <div className="h-1 bg-forest" style={{ width: `${count.percent}%` }} />
         </div>
         <p className="mt-2 text-xs tracking-widest text-muted">
-          {count.done} of {count.total} complete
+          {count.done} of {count.total} complete · {count.open} open
+          {count.locked ? ` · ${count.locked} locked` : ""}
+          {count.blocked ? ` · ${count.blocked} blocked` : ""}
           {count.postLaunch ? ` · ${count.postLaunch} post launch` : ""}
         </p>
       </div>
@@ -256,8 +259,9 @@ function Column({
 }
 
 function TaskBlock({ title, href, tasks: all }: { title: string; href: string; tasks: Task[] }) {
+  const everyTask = usePeculiar((s) => s.tasks);
   const tasks = all.filter((task) => !task.afterLaunch);
-  const count = countComplete(tasks);
+  const count = countComplete(tasks, everyTask);
   const stepped = tasks.filter((task) => task.steps?.length);
   const plain = tasks.filter((task) => !task.steps?.length);
   const sections = [...new Set(plain.map((task) => task.section))];
@@ -398,23 +402,32 @@ function TaskLine({ task }: { task: Task }) {
   const setOpenTask = usePeculiar((s) => s.setOpenTask);
   const done = task.status === "COMPLETE";
   const parked = isPostLaunch(task.status);
+  const { locked, waiting } = useTaskGate(task);
   return (
     <li className="flex items-center gap-2 border-t border-line">
       <button
         type="button"
         aria-label={done ? `Reopen ${task.title}` : `Complete ${task.title}`}
         onClick={() => updateTask(task.id, { status: done ? "IN PROGRESS" : "COMPLETE" })}
+        disabled={locked}
         className={cn(
           "flex h-11 w-11 shrink-0 items-center justify-center border",
           done ? "border-forest bg-forest text-paper" : parked ? "border-dashed border-forest bg-paper text-forest" : "border-line bg-paper",
+          locked && "cursor-not-allowed text-muted",
         )}
-        title={parked ? "Post launch. Check to mark it fully complete." : undefined}
+        title={locked ? unlockText(waiting) : parked ? "Post launch. Check to mark it fully complete." : undefined}
       >
-        {parked ? <Clock className="size-4" /> : <Check className="size-4" />}
+        {locked ? <Lock className="size-4" /> : parked ? <Clock className="size-4" /> : <Check className="size-4" />}
       </button>
-      <button type="button" onClick={() => setOpenTask(task.id)} className={cn("flex-1 py-2 text-left text-sm", done && "text-muted line-through", parked && "text-muted")}>
+      <button
+        type="button"
+        title={locked ? unlockText(waiting) : undefined}
+        onClick={() => setOpenTask(task.id)}
+        className={cn("flex-1 py-2 text-left text-sm", done && "text-muted line-through", (parked || locked) && "text-muted")}
+      >
         {task.title}
         {parked ? <span className="ml-2 whitespace-nowrap text-xs tracking-widest text-forest">Post launch</span> : null}
+        <GateLabel task={task} locked={locked} />
       </button>
       <DeleteButton compact label={`Delete ${task.title}`} onConfirm={() => removeTask(task.id)} />
     </li>
@@ -428,26 +441,53 @@ function StepTile({ task }: { task: Task }) {
   const progress = stepProgress(task);
   const done = task.status === "COMPLETE";
   const parked = isPostLaunch(task.status);
-  const next = parked ? "Post launch" : progress.next && !done ? `Next: ${progress.next.label}` : undefined;
+  const { locked, waiting } = useTaskGate(task);
+  const next = locked
+    ? unlockText(waiting)
+    : parked
+      ? "Post launch"
+      : progress.next && !done
+        ? `Next: ${progress.next.label}`
+        : undefined;
   return (
-    <li className={cn("flex h-11 items-stretch border", done ? "border-forest" : parked ? "border-dashed border-forest bg-paper" : "border-line bg-paper")}>
+    <li
+      className={cn(
+        "flex h-11 items-stretch border",
+        done ? "border-forest" : parked ? "border-dashed border-forest bg-paper" : locked ? "border-dashed border-line bg-paper" : "border-line bg-paper",
+      )}
+    >
       <button
         type="button"
         aria-label={done ? `Reopen ${task.title}` : `Complete ${task.title}`}
         onClick={() => updateTask(task.id, { status: done ? "IN PROGRESS" : "COMPLETE" })}
+        disabled={locked}
+        title={locked ? next : undefined}
         className={cn(
           "flex w-10 items-center justify-center border-r",
           done ? "border-forest bg-forest text-paper" : parked ? "border-dashed border-forest bg-sheet text-forest" : "border-line bg-sheet",
+          locked && "cursor-not-allowed text-muted",
         )}
       >
-        {parked ? <Clock className="size-4" /> : <Check className="size-4" />}
+        {locked ? <Lock className="size-4" /> : parked ? <Clock className="size-4" /> : <Check className="size-4" />}
       </button>
-      <button type="button" title={next} onClick={() => setOpenTask(task.id)} className={cn("px-3 text-left text-sm", done && "text-muted line-through", parked && "text-muted")}>
+      <button
+        type="button"
+        title={next}
+        onClick={() => setOpenTask(task.id)}
+        className={cn("px-3 text-left text-sm", done && "text-muted line-through", (parked || locked) && "text-muted")}
+      >
         {task.title}
         {parked ? <span className="ml-2 whitespace-nowrap text-xs tracking-widest text-forest">Post launch</span> : null}
+        <GateLabel task={task} locked={locked} />
       </button>
     </li>
   );
+}
+
+/** A short word after a task's name when it sits outside the open count. */
+function GateLabel({ task, locked }: { task: Task; locked: boolean }) {
+  const word = locked ? "Locked" : task.status === "BLOCKED" ? "Blocked" : task.optional ? "Optional" : task.partOf ? "In list" : "";
+  return word ? <span className="ml-2 whitespace-nowrap text-xs tracking-widest text-muted">{word}</span> : null;
 }
 
 function DecisionLine({ item }: { item: Decision }) {

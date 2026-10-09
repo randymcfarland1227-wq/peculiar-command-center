@@ -26,7 +26,7 @@ function ProductLabPage() {
   const decisions = allDecisions.filter((item) => item.workstreams.includes("product-lab"));
   const active = tasks.filter((task) => !task.afterLaunch);
   const tracks = active.filter((task) => task.steps?.length && task.section !== "Safety");
-  const trackCount = countComplete(tracks);
+  const trackCount = countComplete(tracks, allTasks);
   const [openSlot, setOpenSlot] = useState("01");
 
   return (

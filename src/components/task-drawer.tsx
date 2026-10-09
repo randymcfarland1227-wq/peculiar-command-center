@@ -4,7 +4,8 @@ import { HowList } from "@/components/step-track";
 import { DeleteButton, Field, SelectInput, TextInput, AreaInput, GhostButton, SolidButton } from "@/components/fields";
 import { PRIORITIES, STATUSES, WORKSTREAMS, WORKSTREAM_LABEL, LAUNCH_AREAS } from "@/lib/peculiar/types";
 import { usePeculiar } from "@/lib/peculiar/store";
-import { isPostLaunch } from "@/lib/peculiar/status";
+import { isClosed, isPostLaunch, waitingOn } from "@/lib/peculiar/status";
+import { unlockText } from "@/components/task-gate";
 
 export function TaskDrawer() {
   const draft = usePeculiar((s) => s.draft);
@@ -23,6 +24,9 @@ export function TaskDrawer() {
   const suppliers = usePeculiar((s) => s.suppliers);
 
   const record = draft ?? task;
+  const allTasks = usePeculiar((s) => s.tasks);
+  const waiting = record && !isClosed(record.status) ? waitingOn(record, allTasks) : [];
+  const parent = record?.partOf ? allTasks.find((item) => item.id === record.partOf) : undefined;
   const open = Boolean(record);
 
   useEffect(() => {
@@ -107,7 +111,24 @@ export function TaskDrawer() {
                 <option value="after">After launch</option>
               </SelectInput>
             </Field>
+            <Field label="Required">
+              <SelectInput value={record.optional ? "optional" : "required"} onChange={(event) => patch({ optional: event.target.value === "optional" })}>
+                <option value="required">Required for launch</option>
+                <option value="optional">Optional, not counted</option>
+              </SelectInput>
+            </Field>
           </div>
+          {waiting.length ? (
+            <p className="border-l-2 border-olive bg-sheet px-3 py-2 text-sm leading-relaxed text-ink">
+              Locked. {unlockText(waiting, 6)}. It stays out of the open count until then. To change what it waits on,
+              edit Dependencies below.
+            </p>
+          ) : null}
+          {parent ? (
+            <p className="border-l-2 border-line bg-sheet px-3 py-2 text-sm leading-relaxed text-ink">
+              Part of {parent.title}: counted there, not on its own.
+            </p>
+          ) : null}
           {isPostLaunch(record.status) ? (
             <p className="border-l-2 border-forest bg-sheet px-3 py-2 text-sm leading-relaxed text-ink">
               Post launch: counted as done for launch and kept off the active lists. Find it under Post launch on the

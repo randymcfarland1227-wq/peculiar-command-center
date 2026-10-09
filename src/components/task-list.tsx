@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, Clock } from "lucide-react";
+import { Check, Clock, Lock } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { prettyDate } from "@/lib/peculiar/format";
 import { usePeculiar } from "@/lib/peculiar/store";
@@ -8,6 +8,7 @@ import { PRIORITIES, STATUSES, WORKSTREAM_LABEL, type Priority, type Task, type 
 import { PriorityChip, StatusChip } from "@/components/status-chip";
 import { StepTrackRow } from "@/components/step-track";
 import { DeleteButton } from "@/components/fields";
+import { GateChips, LockNote, useTaskGate } from "@/components/task-gate";
 
 export function TaskList({ tasks, empty }: { tasks: Task[]; empty?: string }) {
   const [scope, setScope] = useState<"active" | "all">("active");
@@ -17,16 +18,17 @@ export function TaskList({ tasks, empty }: { tasks: Task[]; empty?: string }) {
   const updateTask = usePeculiar((s) => s.updateTask);
   const setOpenTask = usePeculiar((s) => s.setOpenTask);
   const removeTask = usePeculiar((s) => s.removeTask);
+  const everyTask = usePeculiar((s) => s.tasks);
 
   const shown = useMemo(() => {
     return tasks
-      .filter((task) => showInTaskList(task, { scope, priority, status, query }))
+      .filter((task) => showInTaskList(task, { scope, priority, status, query }, everyTask))
       .slice()
       .sort((a, b) => {
         const rank = { NOW: 0, NEXT: 1, LATER: 2 };
         return rank[a.priority] - rank[b.priority] || a.section.localeCompare(b.section);
       });
-  }, [tasks, scope, priority, status, query]);
+  }, [tasks, everyTask, scope, priority, status, query]);
 
   // The two views leave the Post launch shortcut, so its pill never reads as on alongside them.
   const chooseScope = (next: "active" | "all") => {
@@ -101,57 +103,70 @@ export function TaskList({ tasks, empty }: { tasks: Task[]; empty?: string }) {
               </div>
             ) : null}
             <ul className="border-t border-line">
-              {items.filter((task) => !task.steps?.length).map((task) => {
-                const parked = isPostLaunch(task.status);
-                return (
-                  <li key={task.id} className="grid grid-cols-[auto_1fr_auto] items-start gap-3 border-b border-line py-3">
-                    <button
-                      type="button"
-                      aria-label={task.status === "COMPLETE" ? `Reopen ${task.title}` : `Complete ${task.title}`}
-                      onClick={() =>
-                        updateTask(task.id, { status: task.status === "COMPLETE" ? "IN PROGRESS" : "COMPLETE" })
-                      }
-                      className={cn(
-                        "mt-1 flex h-11 w-11 items-center justify-center border",
-                        task.status === "COMPLETE"
-                          ? "border-forest bg-forest text-paper"
-                          : parked
-                            ? "border-dashed border-forest bg-sheet text-forest"
-                            : "border-line bg-sheet",
-                      )}
-                      title={parked ? "Post launch. Check to mark it fully complete." : undefined}
-                    >
-                      {parked ? <Clock className="size-4" /> : <Check className="size-4" />}
-                    </button>
-                    <div className="min-w-0">
-                      <button
-                        type="button"
-                        onClick={() => setOpenTask(task.id)}
-                        className={cn(
-                          "text-left font-serif text-xl leading-snug",
-                          task.status === "COMPLETE" && "text-muted line-through",
-                          parked && "text-muted",
-                        )}
-                      >
-                        {task.title}
-                      </button>
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <PriorityChip priority={task.priority} />
-                        <StatusChip status={task.status} />
-                        <span className="text-xs tracking-widest text-muted">{WORKSTREAM_LABEL[task.workstream]}</span>
-                        {task.due ? <span className="text-xs tracking-widest text-muted">Due {prettyDate(task.due)}</span> : null}
-                      </div>
-                      {task.notes ? <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted">{task.notes}</p> : null}
-                    </div>
-                    <DeleteButton compact className="mt-1" label={`Delete ${task.title}`} onConfirm={() => removeTask(task.id)} />
-                  </li>
-                );
-              })}
+              {items.filter((task) => !task.steps?.length).map((task) => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  onToggle={() => updateTask(task.id, { status: task.status === "COMPLETE" ? "IN PROGRESS" : "COMPLETE" })}
+                  onOpen={() => setOpenTask(task.id)}
+                  onRemove={() => removeTask(task.id)}
+                />
+              ))}
             </ul>
           </section>
         ))
       )}
     </div>
+  );
+}
+
+function TaskRow({ task, onToggle, onOpen, onRemove }: { task: Task; onToggle: () => void; onOpen: () => void; onRemove: () => void }) {
+  const parked = isPostLaunch(task.status);
+  const { locked } = useTaskGate(task);
+  return (
+    <li className="grid grid-cols-[auto_1fr_auto] items-start gap-3 border-b border-line py-3">
+      <button
+        type="button"
+        aria-label={task.status === "COMPLETE" ? `Reopen ${task.title}` : `Complete ${task.title}`}
+        onClick={onToggle}
+        disabled={locked}
+        className={cn(
+          "mt-1 flex h-11 w-11 items-center justify-center border",
+          task.status === "COMPLETE"
+            ? "border-forest bg-forest text-paper"
+            : parked
+              ? "border-dashed border-forest bg-sheet text-forest"
+              : "border-line bg-sheet",
+          locked && "cursor-not-allowed text-muted",
+        )}
+        title={parked ? "Post launch. Check to mark it fully complete." : undefined}
+      >
+        {locked ? <Lock className="size-4" /> : parked ? <Clock className="size-4" /> : <Check className="size-4" />}
+      </button>
+      <div className="min-w-0">
+        <button
+          type="button"
+          onClick={onOpen}
+          className={cn(
+            "text-left font-serif text-xl leading-snug",
+            task.status === "COMPLETE" && "text-muted line-through",
+            (parked || locked) && "text-muted",
+          )}
+        >
+          {task.title}
+        </button>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <PriorityChip priority={task.priority} />
+          <StatusChip status={task.status} />
+          <GateChips task={task} />
+          <span className="text-xs tracking-widest text-muted">{WORKSTREAM_LABEL[task.workstream]}</span>
+          {task.due ? <span className="text-xs tracking-widest text-muted">Due {prettyDate(task.due)}</span> : null}
+        </div>
+        <LockNote task={task} />
+        {task.notes ? <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted">{task.notes}</p> : null}
+      </div>
+      <DeleteButton compact className="mt-1" label={`Delete ${task.title}`} onConfirm={onRemove} />
+    </li>
   );
 }
 

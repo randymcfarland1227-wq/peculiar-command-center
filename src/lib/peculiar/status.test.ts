@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { POST_LAUNCH, countComplete, isClosed, isOpenTask, isPostLaunch, nextActions, showInTaskList } from "./status.ts";
+import { POST_LAUNCH, countComplete, isClosed, isLocked, isOpenTask, isPostLaunch, nextActions, showInTaskList, waitingOn } from "./status.ts";
 import { STATUSES, type Task, type TaskStatus } from "./types.ts";
 
 function task(id: string, patch: Partial<Task> = {}): Task {
@@ -64,7 +64,7 @@ describe("Post launch status", () => {
       task("open2"),
       task("parked", { status: POST_LAUNCH, afterLaunch: true }),
     ];
-    assert.deepEqual(countComplete(tasks), { done: 2, total: 4, postLaunch: 1, percent: 50 });
+    assert.deepEqual(countComplete(tasks), { done: 2, total: 4, postLaunch: 1, open: 2, locked: 0, blocked: 0, percent: 50 });
   });
 
   it("drops out of next actions", () => {
@@ -119,5 +119,80 @@ describe("saved data from before Post launch existed", () => {
       roundTrip.filter((t) => isClosed(t.status)).map((t) => t.status),
       ["COMPLETE"],
     );
+  });
+});
+
+describe("dependencies", () => {
+  const step = (id: string, value = "") => ({ id, label: id.toUpperCase(), hint: "", value });
+
+  it("locks a task until the task it names is closed", () => {
+    const setup = task("setup", { workstream: "company", status: "BLOCKED" });
+    const legal = task("legal", { workstream: "company", dependencies: "setup" });
+    const all = [setup, legal];
+    assert.equal(isLocked(legal, all), true);
+    assert.deepEqual(waitingOn(legal, all), [{ id: "setup", label: "setup" }]);
+    assert.equal(isOpenTask(legal, all), false);
+    const done = [{ ...setup, status: "COMPLETE" as const }, legal];
+    assert.equal(isLocked(legal, done), false);
+    assert.equal(isOpenTask(legal, done), true);
+  });
+
+  it("waits on a single field with task:step", () => {
+    const vessels = task("vessels", { workstream: "product-lab", steps: [step("inv", "done"), step("run")] });
+    const shop = task("shop", { workstream: "commerce", dependencies: "vessels:run" });
+    assert.deepEqual(waitingOn(shop, [vessels, shop]), [{ id: "vessels:run", label: "vessels: RUN" }]);
+    const picked = { ...vessels, steps: [step("inv", "done"), step("run", "GNT, JS")] };
+    assert.equal(isLocked(shop, [picked, shop]), false);
+  });
+
+  it("'*' waits on every counted task outside launch and research", () => {
+    const store = task("store", { workstream: "commerce" });
+    const research = task("notes", { workstream: "research" });
+    const optional = task("ins", { workstream: "company", optional: true });
+    const part = task("wicks", { workstream: "product-lab", partOf: "shop" });
+    const waitlist = task("waitlist", { workstream: "launch", dependencies: "*" });
+    const golive = task("golive", { workstream: "launch", dependencies: "*, waitlist" });
+    const all = [store, research, optional, part, waitlist, golive];
+    assert.deepEqual(waitingOn(waitlist, all).map((w) => w.id), ["store"]);
+    assert.deepEqual(waitingOn(golive, all).map((w) => w.id), ["store", "waitlist"]);
+    const ready = all.map((t) => (t.id === "store" ? { ...t, status: "COMPLETE" as const } : t));
+    assert.equal(isLocked(waitlist, ready), false);
+    assert.equal(isLocked(golive, ready), true);
+  });
+
+  it("ignores missing and optional dependencies", () => {
+    const optional = task("ins", { optional: true });
+    const t1 = task("a", { dependencies: "gone, ins" });
+    assert.equal(isLocked(t1, [optional, t1]), false);
+  });
+
+  it("keeps locked, blocked, optional, and folded-in tasks out of the open count", () => {
+    const all = [
+      task("open"),
+      task("blocked", { status: "BLOCKED" }),
+      task("locked", { dependencies: "blocked" }),
+      task("optional", { optional: true }),
+      task("part", { partOf: "open" }),
+    ];
+    assert.deepEqual(countComplete(all), { done: 0, total: 3, postLaunch: 0, open: 1, locked: 1, blocked: 1, percent: 0 });
+    assert.deepEqual(nextActions(all).map((t) => t.id), ["open"]);
+  });
+
+  it("resolves locks across groups when given every task", () => {
+    const store = task("store", { workstream: "commerce" });
+    const content = task("content", { workstream: "launch", dependencies: "*" });
+    assert.equal(countComplete([content]).open, 1);
+    assert.equal(countComplete([content], [store, content]).open, 0);
+  });
+
+  it("hides locked, blocked, and optional tasks from Now and next, shows them in the full list", () => {
+    const blocked = task("blocked", { status: "BLOCKED" });
+    const locked = task("locked", { dependencies: "blocked" });
+    const optional = task("optional", { optional: true });
+    const all = [blocked, locked, optional, task("open")];
+    const ids = (v: ReturnType<typeof view>) => all.filter((t) => showInTaskList(t, v, all)).map((t) => t.id);
+    assert.deepEqual(ids(view()), ["open"]);
+    assert.deepEqual(ids(view({ scope: "all" })), ["blocked", "locked", "optional", "open"]);
+    assert.deepEqual(ids(view({ status: "BLOCKED" })), ["blocked"]);
   });
 });
