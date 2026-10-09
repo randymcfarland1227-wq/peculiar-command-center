@@ -1,7 +1,7 @@
 /** Life Hub postMessage bridge — source id `candle`. See frontier LIFE_HUB.md. */
 
 import { WORKSTREAM_LABEL, type PeculiarData, type Task } from "@/lib/peculiar/types";
-import { isClosed } from "@/lib/peculiar/status";
+import { isBlocked, isClosed, isCounted, isOpenTask } from "@/lib/peculiar/status";
 
 /** Allowed Life Hub parent origins (GitHub Pages primary + legacy Worker). */
 export const LIFE_HUB_ORIGINS = [
@@ -74,9 +74,6 @@ export function setCandleStarred(id: string, starred: boolean) {
   writeStars(stars);
 }
 
-function isOpenTask(task: Task) {
-  return !isClosed(task.status) && !task.afterLaunch;
-}
 
 /** Completed tasks are reported back this many days so Life Hub's month view can count them. */
 const DONE_LOOKBACK_DAYS = 31;
@@ -115,12 +112,15 @@ export type CandleBridgeData = Pick<PeculiarData, "tasks" | "vessels" | "skus">;
 
 export function buildCandleSnapshot(data: CandleBridgeData): LifeHubSnapshot {
   const stars = readStars();
-  const open = data.tasks.filter(isOpenTask);
+  // Open work only: locked, optional, folded-in, and blocked tasks don't count as open.
+  const open = data.tasks.filter((task) => isOpenTask(task, data.tasks));
   const openStudioTasks = open.length;
   const acceptedVessels = data.vessels.filter((v) => v.acceptance === "Accepted").length;
   const skusDefined = data.skus.length;
 
-  const tasks: LifeHubTask[] = open.map((task) => ({
+  // Blocked tasks still ride along, marked blocked, so the blocker stays in view; they aren't counted.
+  const blocked = data.tasks.filter((task) => isCounted(task) && !isClosed(task.status) && isBlocked(task));
+  const tasks: LifeHubTask[] = [...open, ...blocked].map((task) => ({
     id: task.id,
     title: task.title,
     detail: task.notes || undefined,

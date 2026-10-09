@@ -64,6 +64,7 @@ export function productLabTracks(): Task[] {
       launchArea: "Inventory",
       steps: [
         step("p23", "Inventory", "Measured and classified by fill range, diameter, and profile"),
+        step(FIRST_RUN_STEP, "First run", "Which vessels go in the launch run. Wicks, closures, and boxes wait on this"),
         step("p24", "Acceptance criteria", "What a vessel needs to pass"),
         step("p25", "Rejection criteria", "What rules a vessel out"),
         step("p26", "Old branding", "Which marks stay, which come off"),
@@ -108,7 +109,9 @@ export function productLabTracks(): Task[] {
     }),
     t("pl-wicks", "Wicks", "product-lab", "NOT STARTED", "NEXT", "Wicks", {
       relatedSupplier: "sup-wick",
-      dependencies: "pl-vessels, pl-wax, pl-fragrance",
+      dependencies: `${FIRST_RUN}, pl-wax, pl-fragrance`,
+      partOf: SHOPPING_ID,
+      notes: "Bigger sizes may be needed. Decide after the vessel run.",
       launchArea: "Product",
       steps: [
         step("p18", "Wick families", "Which families to test"),
@@ -120,7 +123,9 @@ export function productLabTracks(): Task[] {
     }),
     t("pl-closures", "Closures", "product-lab", "NOT STARTED", "NEXT", "Closures", {
       relatedExperiment: "exp-cork",
-      dependencies: "pl-vessels",
+      dependencies: FIRST_RUN,
+      partOf: SHOPPING_ID,
+      notes: "Measure with the closure tool once the first-run vessels are picked.",
       launchArea: "Packaging",
       steps: [
         step("p30", "Closure", "Lid or cork"),
@@ -213,15 +218,59 @@ function acquisitions(): Acquisition[] {
   ];
 }
 
+/** The vessel-run field that wicks, closures, and boxes wait on. */
+export const FIRST_RUN_STEP = "p-run";
+const FIRST_RUN = `pl-vessels:${FIRST_RUN_STEP}`;
+
+/** One required task for everything still to buy. Wicks, Closures, and Boxes fold into it. */
+export const SHOPPING_ID = "cm-shopping";
+export const SHOPPING_PARTS = ["pl-wicks", "pl-closures", "cm-boxes"];
+export const BOXES_TITLE = "Boxes and packaging design";
+
+/** Launch tasks wait on everything before launch ("*"); go live also waits on the other launch tasks. */
+export const GO_LIVE_DEPENDENCIES = "*, la-content, la-interviews, la-batch, cm-waitlist";
+
+export function shoppingTask(): Task {
+  return t(SHOPPING_ID, "Shopping list", "commerce", "NOT STARTED", "NEXT", "Shopping", {
+    dependencies: FIRST_RUN,
+    link: "/acquiring",
+    notes:
+      "Counts as one task. Wicks, Closures, and Boxes and packaging design sit inside it and aren't counted on their own. Every item to buy lives on the Acquiring page.",
+    launchArea: "Inventory",
+    steps: [
+      step("sh-wicks", "Wicks", "Bigger sizes, if the vessel run calls for them. What, and when"),
+      step("sh-closures", "Closure materials", "For the first-run vessels. What, and when"),
+      step("sh-boxes", "Boxes and packaging", "Boxes, padding, and packaging pieces. What, and when"),
+    ],
+  });
+}
+
+export const BUSINESS_SETUP_NOTES = [
+  "Blocked: the Maryland LLC filing is $100, not in the budget yet. Legal and tax waits on this.",
+  "A free way to start, to check before relying on it: sell as a sole proprietor under your own name (no state filing), get a free EIN from the IRS, and register for Maryland sales tax (free). Form the LLC once there is revenue. A Maryland LLC also owes a $300 annual report every year.",
+].join("\n");
+
+export const BOOKKEEPING_NOTES =
+  "Bookkeeping lives on Peculiar Floor (the owner backend): its Ledger already sorts every cost into Schedule C categories and holds the tax reserve. Finishing it means every purchase so far is on the Ledger with a receipt, and a monthly close is set. A business bank account comes with Business setup; switch \"Paid with\" to it then.";
+
+export function bookkeepingSteps(): TaskStep[] {
+  return [
+    step("c14", "Bookkeeping", "Peculiar Floor's Ledger, or something else"),
+    step("c15", "Expense categories", "Schedule C list on the Ledger. Keep it, or note changes"),
+    step("c16", "Tax reserve", "Share of each sale set aside, set on the Ledger"),
+    step("c17", "Receipts logged", "Every purchase so far on the Ledger, amounts checked against receipts"),
+    step("c18", "Monthly close", "The day each month the books get closed"),
+  ];
+}
+
 /**
  * Jobs that used to be several tasks, each now one task whose fields are its parts.
  * Step ids are the ids of the tasks they replaced, so saved progress carries over.
  */
 export function combinedTasks(): Task[] {
   return [
-    t("co-setup", "Business setup", "company", "NOT STARTED", "NOW", "Legal", {
-      due: "2026-10-15",
-      notes: "File the LLC, then EIN, then business checking. A credit card is a later decision, not part of this action.",
+    t("co-setup", "Business setup", "company", "BLOCKED", "NOW", "Legal", {
+      notes: BUSINESS_SETUP_NOTES,
       launchArea: "Admin",
       steps: [
         step("c1", "LLC", "Filed with Maryland, and when"),
@@ -238,6 +287,7 @@ export function combinedTasks(): Task[] {
       ],
     }),
     t("co-legal", "Legal and tax", "company", "NOT STARTED", "NEXT", "Legal", {
+      dependencies: "co-setup",
       launchArea: "Admin",
       steps: [
         step("c10", "Maryland sales tax", "Registered, and the account number"),
@@ -245,7 +295,8 @@ export function combinedTasks(): Task[] {
       ],
     }),
     t("co-insurance", "Insurance", "company", "WAITING", "NEXT", "Insurance", {
-      notes: "Need quotes before the first sale.",
+      notes: "Optional: not counted. Worth a quote before the first sale.",
+      optional: true,
       launchArea: "Admin",
       steps: [
         step("c12", "Product liability", "Carrier and yearly cost"),
@@ -253,12 +304,9 @@ export function combinedTasks(): Task[] {
         step("s16", "Covers the product", "Policy matches the candles as made and sold"),
       ],
     }),
-    t("co-books", "Bookkeeping", "company", "NOT STARTED", "LATER", "Finance", {
-      steps: [
-        step("c14", "Bookkeeping", "Tool or spreadsheet"),
-        step("c15", "Expense categories", "The list"),
-        step("c16", "Tax reserve", "Share of each sale set aside"),
-      ],
+    t("co-books", "Bookkeeping", "company", "NOT STARTED", "NOW", "Finance", {
+      notes: BOOKKEEPING_NOTES,
+      steps: bookkeepingSteps(),
     }),
 
     t("sa-docs", "Safety documents", "product-lab", "NOT STARTED", "NEXT", "Safety", {
@@ -310,16 +358,11 @@ export function combinedTasks(): Task[] {
         step("b11", "Recycled label", "Recycled collection label"),
       ],
     }),
-    t("br-pack", "Packaging design", "brand", "NOT STARTED", "NEXT", "Packaging", {
-      steps: [
-        step("b12", "Closure look", "Cork and beeswax treatment"),
-        step("b13", "Care card", "Candle-care instructions, designed"),
-      ],
-    }),
     t("b17", "Create photo styling guide", "brand", "NOT STARTED", "NEXT", "Photography"),
 
     t("cm-costs", "Real costs", "commerce", "NOT STARTED", "NEXT", "Pricing", {
-      notes: "One field per cost line. The Costs page holds the per-size numbers.",
+      notes: "One field per cost line. The Costs page holds the per-size numbers. Opens once wicks, closures, and boxes are settled.",
+      dependencies: `${SHOPPING_ID}, pl-wicks, pl-closures, cm-boxes`,
       steps: [
         step("m2", "Wax", "Cost per ounce, landed"),
         step("m3", "Fragrance", "Cost per ounce of oil"),
@@ -336,6 +379,7 @@ export function combinedTasks(): Task[] {
       ],
     }),
     t("cm-pricing", "Pricing", "commerce", "NOT STARTED", "NEXT", "Pricing", {
+      dependencies: "cm-costs",
       launchArea: "Product",
       steps: [
         step("m14", "True cost by size", "Regular and Large"),
@@ -367,7 +411,8 @@ export function combinedTasks(): Task[] {
         step("sf12", "Checkout", "Stripe, Shopify Starter, or another"),
       ],
     }),
-    t("cm-waitlist", "Waitlist", "commerce", "NOT STARTED", "NEXT", "Storefront", {
+    t("cm-waitlist", "Waitlist", "launch", "NOT STARTED", "NEXT", "Readiness", {
+      dependencies: "*",
       launchArea: "Content",
       steps: [
         step("sf10", "Signup form", "On the storefront"),
@@ -375,8 +420,11 @@ export function combinedTasks(): Task[] {
         step("l10", "Live", "Open and collecting emails"),
       ],
     }),
-    t("cm-boxes", "Shipping boxes", "commerce", "NOT STARTED", "NEXT", "Packaging", {
+    shoppingTask(),
+    t("cm-boxes", BOXES_TITLE, "commerce", "NOT STARTED", "NEXT", "Packaging", {
       relatedSupplier: "sup-pack",
+      dependencies: FIRST_RUN,
+      partOf: SHOPPING_ID,
       launchArea: "Packaging",
       steps: [
         step("k1", "One-candle box", "Size and source"),
@@ -385,6 +433,8 @@ export function combinedTasks(): Task[] {
         step("k3", "Odd-shape protection", "How reclaimed shapes ride safely"),
         step("k5", "Drop test", "Result"),
         step("k6", "Packed weights", "Weight and dimensions per box"),
+        step("b12", "Closure look", "Cork and beeswax treatment"),
+        step("b13", "Care card", "Candle-care instructions, designed"),
       ],
     }),
     t("cm-shipping", "Shipping policy", "commerce", "NOT STARTED", "NEXT", "Packaging", {
@@ -398,6 +448,7 @@ export function combinedTasks(): Task[] {
     }),
 
     t("la-content", "Photos and content", "launch", "NOT STARTED", "NEXT", "Content", {
+      dependencies: "*",
       launchArea: "Content",
       steps: [
         step("n1", "Vessel photos", "Current reclaimed stock"),
@@ -410,6 +461,7 @@ export function combinedTasks(): Task[] {
     t("la-interviews", "Customer interviews", "launch", "NOT STARTED", "NEXT", "Validation", {
       notes: "One round of interviews. Each field is a question to ask, answered with what people said.",
       relatedExperiment: "exp-mystery",
+      dependencies: "*",
       launchArea: "Customer Validation",
       steps: [
         step("v1", "Interviews done", "Who, and how many"),
@@ -424,6 +476,7 @@ export function combinedTasks(): Task[] {
       ],
     }),
     t("la-batch", "Launch batch", "launch", "NOT STARTED", "LATER", "Readiness", {
+      dependencies: "*",
       launchArea: "Inventory",
       steps: [
         step("l7", "First sellable candles", "Poured, cured, and QC'd"),
@@ -432,6 +485,8 @@ export function combinedTasks(): Task[] {
       ],
     }),
     t("la-golive", "Go live", "launch", "NOT STARTED", "LATER", "Readiness", {
+      dependencies: GO_LIVE_DEPENDENCIES,
+      notes: "The last step. Opens once every other launch task is done.",
       launchArea: "Storefront",
       steps: [
         step("l11", "Launch date", "The date"),

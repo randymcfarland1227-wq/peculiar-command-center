@@ -131,6 +131,10 @@ export interface Task {
   steps?: TaskStep[];
   /** Parked until after launch: kept, but out of every count and active list. */
   afterLaunch?: boolean;
+  /** Nice to have, not required for launch: shown, but out of every count. */
+  optional?: boolean;
+  /** Id of the task this one is folded into. Only that task counts; this one holds its detail. */
+  partOf?: string;
 }
 
 export interface Decision {

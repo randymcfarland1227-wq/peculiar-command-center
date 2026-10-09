@@ -1,5 +1,6 @@
 import { GUIDES } from "./guides";
 import { addTaskIfMissing, stripeIntegrationTask } from "./added-tasks";
+import { orderThePlan } from "./dependency-update";
 import { AFTER_LAUNCH_IDS, CUT_TASK_ALIASES, CUT_TASK_IDS, combinedTasks, economics, scents, skus } from "./seed";
 import type { Decision, Experiment, PeculiarData, ResearchQuestion, Priority, SizeModel, Task, TaskStatus, TaskStep } from "./types";
 
@@ -15,6 +16,7 @@ const UPDATES: { id: string; apply: (data: PeculiarData) => PeculiarData }[] = [
   { id: "2026-10-05-wicks-labels-research", apply: wicksLabelsResearch },
   { id: "2026-10-05-research-findings", apply: researchFindings },
   { id: "2026-10-08-stripe-integration-task", apply: addStripeTask },
+  { id: "2026-10-09-order-the-plan", apply: orderThePlan },
 ];
 
 export function applyUpdates(data: PeculiarData): PeculiarData {
