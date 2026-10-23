@@ -17,6 +17,9 @@ export function isLifeHubOrigin(origin: string) {
   return (LIFE_HUB_ORIGINS as readonly string[]).includes(origin);
 }
 
+/** A task's steps for Life Hub's task panel (shown as its subtasks); done = the field is filled. */
+export type LifeHubStep = { id: string; text: string; done: boolean };
+
 export type LifeHubFeatured = {
   id: string;
   title: string;
@@ -24,6 +27,7 @@ export type LifeHubFeatured = {
   meta: string;
   originUrl?: string;
   completable?: boolean;
+  steps?: LifeHubStep[];
 };
 
 export type LifeHubTask = {
@@ -37,6 +41,7 @@ export type LifeHubTask = {
   due?: string;
   starred?: boolean;
   originUrl?: string;
+  steps?: LifeHubStep[];
 };
 
 export type LifeHubSnapshot = {
@@ -102,6 +107,11 @@ function taskStatusLabel(task: Task) {
   return "open";
 }
 
+function stepsOf(task: Task): LifeHubStep[] | undefined {
+  if (!task.steps?.length) return undefined;
+  return task.steps.map((item) => ({ id: item.id, text: item.label, done: Boolean(item.value.trim()) }));
+}
+
 function taskMeta(task: Task) {
   const stream = WORKSTREAM_LABEL[task.workstream] || task.workstream;
   return task.section ? `${stream} · ${task.section}` : stream;
@@ -128,6 +138,7 @@ export function buildCandleSnapshot(data: CandleBridgeData): LifeHubSnapshot {
     due: task.due || undefined,
     starred: Boolean(stars[task.id]),
     originUrl: ORIGIN_URL,
+    steps: stepsOf(task),
   }));
   // Finished tasks ride along as done so Life Hub records them (a task that just vanishes
   // could have been deleted or parked, so Life Hub never counts a disappearance).
@@ -147,6 +158,7 @@ export function buildCandleSnapshot(data: CandleBridgeData): LifeHubSnapshot {
       meta: taskMeta(task),
       originUrl: ORIGIN_URL,
       completable: true,
+      steps: stepsOf(task),
     }));
 
   return {

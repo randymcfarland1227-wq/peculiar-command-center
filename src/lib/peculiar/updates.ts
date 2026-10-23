@@ -1,8 +1,10 @@
 import { GUIDES } from "./guides";
 import { addTaskIfMissing, stripeIntegrationTask } from "./added-tasks";
+import { settle } from "./settle";
+import { umbrellaSteps } from "./umbrella-steps";
 import { orderThePlan } from "./dependency-update";
 import { AFTER_LAUNCH_IDS, CUT_TASK_ALIASES, CUT_TASK_IDS, combinedTasks, economics, scents, skus } from "./seed";
-import type { Decision, Experiment, PeculiarData, ResearchQuestion, Priority, SizeModel, Task, TaskStatus, TaskStep } from "./types";
+import type { Decision, Experiment, PeculiarData, ResearchQuestion, Priority, SizeModel, Task } from "./types";
 
 /**
  * One-time changes to saved data. Each runs once per browser, is recorded in
@@ -17,6 +19,7 @@ const UPDATES: { id: string; apply: (data: PeculiarData) => PeculiarData }[] = [
   { id: "2026-10-05-research-findings", apply: researchFindings },
   { id: "2026-10-08-stripe-integration-task", apply: addStripeTask },
   { id: "2026-10-09-order-the-plan", apply: orderThePlan },
+  { id: "2026-10-22-umbrella-steps", apply: umbrellaSteps },
 ];
 
 export function applyUpdates(data: PeculiarData): PeculiarData {
@@ -36,30 +39,6 @@ function withGuides(tasks: Task[]): Task[] {
     if (!guide || !task.steps) return task;
     return { ...task, steps: task.steps.map((item) => (guide[item.id] ? { ...item, how: guide[item.id] } : item)) };
   });
-}
-
-function today() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-/** Same rule as the store: complete once every field has an answer, in progress once any does. */
-function statusFromSteps(current: TaskStatus, steps: TaskStep[]): TaskStatus {
-  const filled = steps.filter((item) => item.value.trim()).length;
-  if (steps.length && filled === steps.length) return "COMPLETE";
-  if (current === "COMPLETE") return "IN PROGRESS";
-  if (filled > 0 && (current === "NOT STARTED" || current === "PLANNING")) return "IN PROGRESS";
-  return current;
-}
-
-function settle(task: Task): Task {
-  const status = statusFromSteps(task.status, task.steps ?? []);
-  const done = status === "COMPLETE";
-  return {
-    ...task,
-    status,
-    completedDate: done ? task.completedDate || today() : "",
-    completedAt: done ? task.completedAt || (task.status === "COMPLETE" ? undefined : new Date().toISOString()) : undefined,
-  };
 }
 
 const RANK: Record<Priority, number> = { NOW: 0, NEXT: 1, LATER: 2 };
