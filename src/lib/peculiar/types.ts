@@ -274,6 +274,34 @@ export interface LaunchSku {
   sold: number;
 }
 
+export const PHOTO_STAGES = ["To shoot", "Captured", "Editing", "Ready", "Placed"] as const;
+export type PhotoStage = (typeof PHOTO_STAGES)[number];
+export type ContentKind = "website" | "library" | "social";
+
+export interface PhotoBrief {
+  template: string;
+  subject: string;
+  placement: string;
+  purpose: string;
+  setup: string;
+  framing: string;
+  priority: "First shoot" | "Second pass";
+  stage: PhotoStage;
+  assetLink: string;
+  notes: string;
+  shots: { id: string; label: string; direction: string; done: boolean }[];
+}
+
+export interface MarketingBrief {
+  purpose: string;
+  format: string;
+  hook: string;
+  cta: string;
+  timing: string;
+  measure: string;
+  sourceIds: string[];
+}
+
 export interface ContentItem {
   id: string;
   title: string;
@@ -284,6 +312,10 @@ export interface ContentItem {
   caption: string;
   publishDate: string;
   result: string;
+  /** Old saved content without a kind stays in social marketing. */
+  kind?: ContentKind;
+  photo?: PhotoBrief;
+  marketing?: MarketingBrief;
 }
 
 export interface ResearchQuestion {
