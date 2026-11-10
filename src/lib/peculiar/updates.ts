@@ -3,6 +3,7 @@ import { addTaskIfMissing, stripeIntegrationTask } from "./added-tasks";
 import { settle } from "./settle";
 import { umbrellaSteps } from "./umbrella-steps";
 import { orderThePlan } from "./dependency-update";
+import { addPhotoPlan } from "./photo-plan";
 import { AFTER_LAUNCH_IDS, CUT_TASK_ALIASES, CUT_TASK_IDS, combinedTasks, economics, scents, skus } from "./seed";
 import type { Decision, Experiment, PeculiarData, ResearchQuestion, Priority, SizeModel, Task } from "./types";
 
@@ -20,6 +21,7 @@ const UPDATES: { id: string; apply: (data: PeculiarData) => PeculiarData }[] = [
   { id: "2026-10-08-stripe-integration-task", apply: addStripeTask },
   { id: "2026-10-09-order-the-plan", apply: orderThePlan },
   { id: "2026-10-22-umbrella-steps", apply: umbrellaSteps },
+  { id: "2026-11-10-website-photo-plan", apply: addPhotoPlan },
 ];
 
 export function applyUpdates(data: PeculiarData): PeculiarData {
